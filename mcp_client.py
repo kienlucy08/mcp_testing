@@ -4,7 +4,6 @@ from contextlib import AsyncExitStack
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 from threading import Thread
-import queue
 import os
 
 from anthropic import Anthropic
@@ -24,6 +23,7 @@ class MCPClient:
         self.exit_stack = AsyncExitStack()
         self.anthropic = Anthropic(api_key=os.getenv("API_KEY"))
         self.connected = False
+        self.tools = []
 
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server"""
@@ -32,11 +32,13 @@ class MCPClient:
         if not (is_python or is_js):
             raise ValueError("Server script must be a .py or .js file")
 
+        path = Path(server_script_path).resolve()
+        
         if is_python:
-            path = Path(server_script_path).resolve()
+            # Try using python directly instead of uv
             server_params = StdioServerParameters(
-                command="uv",
-                args=["--directory", str(path.parent), "run", path.name],
+                command="python",  # or "python3" on some systems
+                args=[str(path)],
                 env=None,
             )
         else:
@@ -62,13 +64,14 @@ class MCPClient:
         
         return [tool.name for tool in self.tools]
 
-    async def process_query(self, query: str) -> str:
+    async def process_query(self, query: str) -> dict:
         """Process a query using Claude and available tools"""
         if not self.connected:
-            return "Error: Not connected to MCP server"
+            return {"error": "Not connected to MCP server"}
 
         messages = [{"role": "user", "content": query}]
 
+        # Get available tools
         response = await self.session.list_tools()
         available_tools = [
             {
@@ -79,38 +82,78 @@ class MCPClient:
             for tool in response.tools
         ]
 
+        # Initial Claude API call
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
-            max_tokens=1000,
+            max_tokens=2000,
             messages=messages,
             tools=available_tools
         )
 
-        final_text = []
+        # Track conversation and tool calls
+        conversation_parts = []
+        tools_used = []
 
-        for content in response.content:
-            if content.type == "text":
-                final_text.append(content.text)
-            elif content.type == "tool_use":
-                tool_name = content.name
-                tool_args = content.input
+        # Process response
+        while response.stop_reason == "tool_use":
+            # Add assistant's response to messages
+            messages.append({
+                "role": "assistant",
+                "content": response.content
+            })
 
-                result = await self.session.call_tool(tool_name, tool_args)
-                final_text.append(f"🔧 Called tool: {tool_name}")
+            # Process each tool use
+            tool_results = []
+            for content_block in response.content:
+                if content_block.type == "tool_use":
+                    tool_name = content_block.name
+                    tool_args = content_block.input
+                    
+                    tools_used.append({
+                        "name": tool_name,
+                        "arguments": tool_args
+                    })
 
-                if hasattr(content, "text") and content.text:
-                    messages.append({"role": "assistant", "content": content.text})
-                messages.append({"role": "user", "content": result.content})
+                    # Execute tool via MCP
+                    result = await self.session.call_tool(tool_name, tool_args)
+                    
+                    # Extract text from result
+                    result_text = ""
+                    for item in result.content:
+                        if hasattr(item, 'text'):
+                            result_text += item.text
+                    
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": content_block.id,
+                        "content": result_text
+                    })
 
-                response = self.anthropic.messages.create(
-                    model=ANTHROPIC_MODEL,
-                    max_tokens=1000,
-                    messages=messages,
-                )
+            # Add tool results to messages
+            messages.append({
+                "role": "user",
+                "content": tool_results
+            })
 
-                final_text.append(response.content[0].text)
+            # Get next response from Claude
+            response = self.anthropic.messages.create(
+                model=ANTHROPIC_MODEL,
+                max_tokens=2000,
+                messages=messages,
+                tools=available_tools
+            )
 
-        return "\n\n".join(final_text)
+        # Extract final text response
+        final_text = ""
+        for content_block in response.content:
+            if content_block.type == "text":
+                final_text += content_block.text
+
+        return {
+            "response": final_text,
+            "tools_used": tools_used,
+            "success": True
+        }
 
     async def cleanup(self):
         """Clean up resources"""
@@ -133,7 +176,8 @@ thread.start()
 
 def run_async(coro):
     """Helper to run async functions from sync context"""
-    return asyncio.run_coroutine_threadsafe(coro, event_loop).result()
+    future = asyncio.run_coroutine_threadsafe(coro, event_loop)
+    return future.result(timeout=1800)  # Add timeout
 
 @app.route('/')
 def index():
@@ -148,15 +192,22 @@ def connect():
         if not server_path:
             return jsonify({'error': 'Server path is required'}), 400
         
+        # Validate file exists
+        if not Path(server_path).exists():
+            return jsonify({'error': f'File not found: {server_path}'}), 400
+        
         tools = run_async(mcp_client.connect_to_server(server_path))
         
         return jsonify({
             'success': True,
-            'message': 'Connected successfully',
+            'message': f'Connected successfully! Found {len(tools)} tools.',
             'tools': tools
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Connection error: {error_details}")
+        return jsonify({'error': str(e), 'details': error_details}), 500
 
 @app.route('/query', methods=['POST'])
 def query():
@@ -167,14 +218,20 @@ def query():
         if not user_query:
             return jsonify({'error': 'Query is required'}), 400
         
-        response = run_async(mcp_client.process_query(user_query))
+        if not mcp_client.connected:
+            return jsonify({'error': 'Not connected to MCP server'}), 400
         
-        return jsonify({
-            'success': True,
-            'response': response
-        })
+        result = run_async(mcp_client.process_query(user_query))
+        
+        if result.get('error'):
+            return jsonify({'error': result['error']}), 500
+        
+        return jsonify(result)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Query error: {error_details}")
+        return jsonify({'error': str(e), 'details': error_details}), 500
 
 @app.route('/status')
 def status():
@@ -183,7 +240,23 @@ def status():
         'tools': [tool.name for tool in mcp_client.tools] if mcp_client.connected else []
     })
 
+@app.route('/disconnect', methods=['POST'])
+def disconnect():
+    try:
+        run_async(mcp_client.cleanup())
+        mcp_client.connected = False
+        mcp_client.tools = []
+        return jsonify({'success': True, 'message': 'Disconnected'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
-    print("\n🚀 MCP Web Interface Starting...")
-    print("📍 Open your browser to: http://localhost:5000")
+    print("\n" + "="*60)
+    print("🚀 MCP Web Interface Starting...")
+    print("="*60)
+    print("\n📍 Open your browser to: http://localhost:5000")
+    print("\n💡 Tips:")
+    print("  - Enter the full path to your mcp_server.py")
+    print("  - Make sure your database is configured correctly")
+    print("  - Check the console for error messages\n")
     app.run(debug=True, port=5000, use_reloader=False)

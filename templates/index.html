@@ -108,6 +108,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
         }
 
         button:hover {
@@ -123,6 +124,10 @@
             background: #9ca3af;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .button-secondary {
+            background: #6b7280;
         }
 
         .tools-list {
@@ -176,6 +181,27 @@
             text-transform: uppercase;
         }
 
+        .tool-usage {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .tool-usage-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 5px;
+        }
+
+        .tool-usage-details {
+            color: #78350f;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -219,29 +245,52 @@
             border-radius: 8px;
             margin-top: 15px;
         }
+
+        .example-queries {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .example-query {
+            background: white;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .example-query:hover {
+            background: #e5e7eb;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>MCP Client Interface</h1>
+            <h1>🏗️ Tower Analytics MCP</h1>
             <p>Model Context Protocol Testing Dashboard</p>
             <span id="statusBadge" class="status-badge status-disconnected">Disconnected</span>
         </div>
 
         <div class="card">
-            <h2>Connect to MCP Server</h2>
+            <h2>📡 Connect to MCP Server</h2>
             <div class="input-group">
                 <label for="serverPath">Server Script Path:</label>
-                <input type="text" id="serverPath" placeholder="e.g., ./server/mcp_server.py or ./server.js">
+                <input type="text" id="serverPath" 
+                       placeholder="C:\Users\YourName\mcp_testing\mcp_server.py"
+                       value="C:\Users\LucyKien\mcp_testing\mcp_server.py">
             </div>
             <button id="connectBtn" onclick="connectToServer()">Connect to Server</button>
+            <button class="button-secondary" onclick="disconnect()" id="disconnectBtn" disabled>Disconnect</button>
             <div id="connectStatus"></div>
             <div id="toolsList" class="tools-list"></div>
         </div>
 
         <div class="card">
-            <h2>Chat Interface</h2>
+            <h2>💬 Chat Interface</h2>
             <div id="chatContainer" class="chat-container">
                 <p style="text-align: center; color: #9ca3af; padding: 40px;">
                     Connect to a server to start chatting...
@@ -249,12 +298,32 @@
             </div>
             <div class="input-group">
                 <label for="queryInput">Your Query:</label>
-                <textarea id="queryInput" placeholder="Ask a question or make a request..."></textarea>
+                <textarea id="queryInput" placeholder="Ask a question about your tower data..."></textarea>
             </div>
             <button id="sendBtn" onclick="sendQuery()" disabled>Send Query</button>
+            <button class="button-secondary" onclick="clearChat()">Clear Chat</button>
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>Processing your query...</p>
+            </div>
+
+            <div class="example-queries">
+                <strong>Example Queries (click to use):</strong>
+                <div class="example-query" onclick="useExample(this)">
+                    How many towers are in test-org-001?
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    What are the most common deficiencies in test-org-001?
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Show me towers with safety climb issues
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    What's the average height of guyed towers?
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    List inspections in Alabama
+                </div>
             </div>
         </div>
     </div>
@@ -265,6 +334,7 @@
         async function connectToServer() {
             const serverPath = document.getElementById('serverPath').value;
             const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
             const statusDiv = document.getElementById('connectStatus');
             const statusBadge = document.getElementById('statusBadge');
 
@@ -289,19 +359,24 @@
                 if (data.success) {
                     connected = true;
                     showStatus(data.message, 'success', statusDiv);
-                    statusBadge.textContent = 'Connected';
+                    statusBadge.textContent = 'Connected ✓';
                     statusBadge.className = 'status-badge status-connected';
                     
                     const toolsList = document.getElementById('toolsList');
-                    toolsList.innerHTML = '<strong>Available Tools:</strong><br>' +
+                    toolsList.innerHTML = '<strong>Available Tools (' + data.tools.length + '):</strong><br>' +
                         data.tools.map(tool => `<span class="tool-tag">${tool}</span>`).join('');
                     
                     document.getElementById('sendBtn').disabled = false;
+                    disconnectBtn.disabled = false;
                     document.getElementById('chatContainer').innerHTML = '';
                     
                     connectBtn.textContent = 'Connected ✓';
+                    connectBtn.disabled = true;
                 } else {
-                    showStatus(data.error || 'Connection failed', 'error', statusDiv);
+                    showStatus('Error: ' + (data.error || 'Connection failed'), 'error', statusDiv);
+                    if (data.details) {
+                        console.error('Connection details:', data.details);
+                    }
                     connectBtn.disabled = false;
                     connectBtn.textContent = 'Connect to Server';
                 }
@@ -309,6 +384,31 @@
                 showStatus('Error: ' + error.message, 'error', statusDiv);
                 connectBtn.disabled = false;
                 connectBtn.textContent = 'Connect to Server';
+            }
+        }
+
+        async function disconnect() {
+            try {
+                const response = await fetch('/disconnect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    connected = false;
+                    document.getElementById('statusBadge').textContent = 'Disconnected';
+                    document.getElementById('statusBadge').className = 'status-badge status-disconnected';
+                    document.getElementById('sendBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('connectBtn').disabled = false;
+                    document.getElementById('connectBtn').textContent = 'Connect to Server';
+                    document.getElementById('toolsList').innerHTML = '';
+                    document.getElementById('connectStatus').innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Disconnect error:', error);
             }
         }
 
@@ -340,12 +440,21 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    // Show tools used
+                    if (data.tools_used && data.tools_used.length > 0) {
+                        addToolUsage(data.tools_used, chatContainer);
+                    }
+                    
+                    // Show response
                     addMessage('assistant', data.response, chatContainer);
                 } else {
-                    addMessage('assistant', 'Error: ' + (data.error || 'Unknown error'), chatContainer);
+                    addMessage('assistant', '❌ Error: ' + (data.error || 'Unknown error'), chatContainer);
+                    if (data.details) {
+                        console.error('Query details:', data.details);
+                    }
                 }
             } catch (error) {
-                addMessage('assistant', 'Error: ' + error.message, chatContainer);
+                addMessage('assistant', '❌ Error: ' + error.message, chatContainer);
             } finally {
                 sendBtn.disabled = false;
                 loading.classList.remove('active');
@@ -359,7 +468,7 @@
             
             const label = document.createElement('div');
             label.className = 'message-label';
-            label.textContent = role === 'user' ? 'You' : 'Assistant';
+            label.textContent = role === 'user' ? '👤 You' : '🤖 Assistant';
             
             const text = document.createElement('div');
             text.textContent = content;
@@ -370,16 +479,67 @@
             container.appendChild(messageDiv);
         }
 
+        function addToolUsage(tools, container) {
+            const toolDiv = document.createElement('div');
+            toolDiv.className = 'tool-usage';
+            
+            const title = document.createElement('div');
+            title.className = 'tool-usage-title';
+            title.textContent = '🔧 Tools Used:';
+            
+            const details = document.createElement('div');
+            details.className = 'tool-usage-details';
+            
+            tools.forEach(tool => {
+                const toolLine = document.createElement('div');
+                toolLine.textContent = `• ${tool.name}(${JSON.stringify(tool.arguments)})`;
+                details.appendChild(toolLine);
+            });
+            
+            toolDiv.appendChild(title);
+            toolDiv.appendChild(details);
+            container.appendChild(toolDiv);
+        }
+
         function showStatus(message, type, element) {
             element.innerHTML = `<div class="${type}">${message}</div>`;
         }
 
+        function clearChat() {
+            document.getElementById('chatContainer').innerHTML = '';
+        }
+
+        function useExample(element) {
+            if (!connected) {
+                alert('Please connect to the server first');
+                return;
+            }
+            document.getElementById('queryInput').value = element.textContent.trim();
+            document.getElementById('queryInput').focus();
+        }
+
+        // Enter to send (Shift+Enter for new line)
         document.getElementById('queryInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (connected && !document.getElementById('sendBtn').disabled) {
                     sendQuery();
                 }
+            }
+        });
+
+        // Check server status on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                if (data.connected) {
+                    document.getElementById('statusBadge').textContent = 'Connected ✓';
+                    document.getElementById('statusBadge').className = 'status-badge status-connected';
+                    connected = true;
+                }
+            } catch (e) {
+                console.log('Status check failed:', e);
             }
         });
     </script>
