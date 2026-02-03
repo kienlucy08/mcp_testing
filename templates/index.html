@@ -270,13 +270,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏗️ Tower Analytics MCP</h1>
+            <h1>Tower Analytics MCP</h1>
             <p>Model Context Protocol Testing Dashboard</p>
             <span id="statusBadge" class="status-badge status-disconnected">Disconnected</span>
         </div>
 
         <div class="card">
-            <h2>📡 Connect to MCP Server</h2>
+            <h2>Connect to MCP Server</h2>
             <div class="input-group">
                 <label for="serverPath">Server Script Path:</label>
                 <input type="text" id="serverPath" 
@@ -290,7 +290,7 @@
         </div>
 
         <div class="card">
-            <h2>💬 Chat Interface</h2>
+            <h2>Chat Interface</h2>
             <div id="chatContainer" class="chat-container">
                 <p style="text-align: center; color: #9ca3af; padding: 40px;">
                     Connect to a server to start chatting...
@@ -310,19 +310,37 @@
             <div class="example-queries">
                 <strong>Example Queries (click to use):</strong>
                 <div class="example-query" onclick="useExample(this)">
-                    How many towers are in test-org-001?
+                    How many towers are in FieldSync Organization?
                 </div>
                 <div class="example-query" onclick="useExample(this)">
-                    What are the most common deficiencies in test-org-001?
+                    What are the most common deficiencies in FieldSync Organization?
                 </div>
                 <div class="example-query" onclick="useExample(this)">
-                    Show me towers with safety climb issues
+                    How many sites are there in FieldSync organization?
                 </div>
                 <div class="example-query" onclick="useExample(this)">
-                    What's the average height of guyed towers?
+                    What's the average height of guyed towers across organziations?
                 </div>
                 <div class="example-query" onclick="useExample(this)">
-                    List inspections in Alabama
+                    Show me the top ten tallest structures in FieldSync organization
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Show me all towers with safety climb deficiencies
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Get weather for survey 32df6597-e293-4547-986a-fc865d443d6b
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Find all surveys within 25 miles of survey 67055a88-30c0-4cba-b615-ec465a633c6b
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Which towers need TIA inspection?
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Which towers need TIA inspections?
+                </div>
+                <div class="example-query" onclick="useExample(this)">
+                    Compare deficiency rates acorss different tower types (monopole, guyed and self-support)
                 </div>
             </div>
         </div>
@@ -448,13 +466,13 @@
                     // Show response
                     addMessage('assistant', data.response, chatContainer);
                 } else {
-                    addMessage('assistant', '❌ Error: ' + (data.error || 'Unknown error'), chatContainer);
+                    addMessage('assistant', 'Error: ' + (data.error || 'Unknown error'), chatContainer);
                     if (data.details) {
                         console.error('Query details:', data.details);
                     }
                 }
             } catch (error) {
-                addMessage('assistant', '❌ Error: ' + error.message, chatContainer);
+                addMessage('assistant', 'Error: ' + error.message, chatContainer);
             } finally {
                 sendBtn.disabled = false;
                 loading.classList.remove('active');
@@ -468,7 +486,7 @@
             
             const label = document.createElement('div');
             label.className = 'message-label';
-            label.textContent = role === 'user' ? '👤 You' : '🤖 Assistant';
+            label.textContent = role === 'user' ? 'You' : 'Assistant';
             
             const text = document.createElement('div');
             text.textContent = content;
@@ -485,7 +503,7 @@
             
             const title = document.createElement('div');
             title.className = 'tool-usage-title';
-            title.textContent = '🔧 Tools Used:';
+            title.textContent = 'Tools Used:';
             
             const details = document.createElement('div');
             details.className = 'tool-usage-details';

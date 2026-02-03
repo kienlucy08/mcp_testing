@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Dynamic Database Query MCP Server
-Provides intelligent database querying with schema awareness
-"""
-
 import asyncio
 import json
 import sys
@@ -23,6 +17,12 @@ logging.basicConfig(
     stream=sys.stderr
 )
 logger = logging.getLogger(__name__)
+
+# Token limit constants - adjust these to stay within API limits
+MAX_RESPONSE_CHARS = 4000  # Max characters per tool response
+MAX_ROWS_DEFAULT = 5       # Default row limit for samples/queries
+MAX_VALUE_LENGTH = 100     # Truncate individual cell values to this length
+MAX_COLUMNS_SAMPLE = 10    # Max columns to show in table samples
 
 load_dotenv()
 
@@ -203,7 +203,7 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="get_database_schema",
-            description="Get the complete database schema including all tables, columns, and relationships.  The 'site' table contains tower information (best for counting towers). The 'structure' table contains structural details including heights. 'safety_climb' table contains safety climb information.",
+            description="Get database schema for tables, columns, and relationships. Optional: specify table_name.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -216,12 +216,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="search_schema",
-            description="""Search the database schema for tables or columns matching a term.
-            IMPORTANT TABLE USAGE:
-            - 'site' table: Contains tower records. Use for counting towers, listing towers, tower locations.
-            - 'structure' table: Contains structural details and heights. Use for height queries, structural specifications.
-            - For complete tower information, JOIN site with structure on siteId.
-            """,
+            description="""Search database schema for tables or columns matching a term.""",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -235,13 +230,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="execute_query",
-            description="""Execute a custom SQL SELECT query. Use this after understanding the schema.
-            CRITICAL: For tower-related queries:
-            - COUNT towers: Query 'site' table (each site = one tower)
-            - Get heights: Query 'structure' table  
-            - Complete info: JOIN site and structure tables
-            
-            Always use parameterized queries for safety.""",
+            description="""Execute a SELECT query. Use after understanding schema.""",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -279,6 +268,76 @@ async def list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["table_name"]
+            }
+        ),
+        Tool(
+            name="get_survey_coordinates",
+            description="Extract coordinates from survey payloads.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "survey_id": {"type": "string", "description": "Survey UUID"},
+                    "organization_id": {"type": "string", "description": "Organization UUID"},
+                    "site_id": {"type": "string", "description": "Site UUID"},
+                    "limit": {"type": "integer", "description": "Max results", "default": 100}
+                }
+            }
+        ),
+        Tool(
+            name="query_survey_payload",
+            description="Query specific fields in surveyPayload JSON (e.g., 'result.globalId').",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "json_path": {"type": "string", "description": "JSON path to extract"},
+                    "survey_id": {"type": "string"},
+                    "organization_id": {"type": "string"},
+                    "site_id": {"type": "string"},
+                    "limit": {"type": "integer", "default": 100}
+                },
+                "required": ["json_path"]
+            }
+        ),
+        Tool(
+            name="get_surveys_near_location",
+            description="Find surveys within radius of coordinates or another survey.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "latitude": {"type": "number"},
+                    "longitude": {"type": "number"},
+                    "survey_id": {"type": "string"},
+                    "radius_miles": {"type": "number", "default": 10},
+                    "organization_id": {"type": "string"},
+                    "limit": {"type": "integer", "default": 50}
+                }
+            }
+        ),
+        Tool(
+            name="get_weather_for_survey",
+            description="Get current weather and extreme weather events for a survey location. Extracts coordinates from surveyPayload and uses web search for weather data.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "survey_id": {
+                        "type": "string",
+                        "description": "Survey UUID to get weather for"
+                    },
+                    "site_id": {
+                        "type": "string",
+                        "description": "Alternative: Get weather for all surveys at a site"
+                    },
+                    "include_forecast": {
+                        "type": "boolean",
+                        "description": "Include weather forecast (default: false)",
+                        "default": False
+                    },
+                    "include_extreme_events": {
+                        "type": "boolean",
+                        "description": "Search for recent extreme weather events in the area (default: true)",
+                        "default": True
+                    }
+                }
             }
         ),
         Tool(
@@ -336,6 +395,29 @@ async def list_tools() -> list[Tool]:
                 "required": ["from_table", "from_id"]
             }
         ),       
+        Tool(
+            name="get_overdue_inspections",
+            description="Find towers needing TIA inspection based on tower type and last inspection date. Guyed towers: 3 years, Self-support/Monopole: 5 years.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "organization_id": {
+                        "type": "string",
+                        "description": "Filter by organization UUID"
+                    },
+                    "inspection_type": {
+                        "type": "string",
+                        "description": "Type of inspection (e.g., 'TIA', 'safety_climb')",
+                        "default": "TIA"
+                    },
+                    "include_details": {
+                        "type": "boolean",
+                        "description": "Include full site and structure details",
+                        "default": True
+                    }
+                }
+            }
+        )
 ]
 
 @app.call_tool()
@@ -423,13 +505,29 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             response += f"Results: {len(results)} rows\n\n"
             
             if results:
-                # Format results as a table-like structure
-                if len(results) <= 10:
-                    response += json.dumps(results, indent=2, default=str)
-                else:
-                    # Show first 10 and summary
-                    response += json.dumps(results[:10], indent=2, default=str)
-                    response += f"\n\n... and {len(results) - 10} more rows"
+                max_results_to_show = 10
+                max_chars_per_result = 500
+
+                truncated_results = []
+                for i, result in enumerate(results[:max_results_to_show]):
+                    result_str = json.dump(result, default=str)
+                    if len(result_str) > max_chars_per_result:
+                        # Truncate individual fields
+                        truncated_result = {}
+                        for key, value in result.items():
+                            value_str = str(value)
+                            if len(value_str) > 100:
+                                truncated_result[key] = value_str[:100] + "..."
+                            else:
+                                truncated_result[key] = value
+                        truncated_results.append(truncated_result)
+                    else:
+                        truncated_results.append(result)
+                
+                response += json.dumps(truncated_results, indent=2, default=str)
+                
+                if len(results) > max_results_to_show:
+                    response += f"\n\n... and {len(results) - max_results_to_show} more rows (truncated to save tokens)"
             else:
                 response += "No results returned."
             
@@ -644,6 +742,428 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             return [TextContent(type="text", text=response)]
         
+        elif name == "get_survey_coordinates":
+            where_clauses = []
+            params = []
+            
+            if arguments.get("survey_id"):
+                where_clauses.append("survey.id = %s")
+                params.append(arguments["survey_id"])
+            
+            if arguments.get("organization_id"):
+                where_clauses.append('survey."organizationId" = %s')
+                params.append(arguments["organization_id"])
+            
+            if arguments.get("site_id"):
+                where_clauses.append('survey."siteId" = %s')
+                params.append(arguments["site_id"])
+            
+            limit = arguments.get("limit", 100)
+            
+            # Extract coordinates from JSON payload
+            query = """
+                    SELECT 
+                        survey.id as survey_id,
+                        survey.name as survey_name,
+                        site_visit."siteId" as site_id,
+                        site.name as site_name,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'y')::float as latitude,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'x')::float as longitude,
+                        survey."surveyPayload"::jsonb->'geometry'->'spatialReference'->>'wkid' as wkid,
+                        survey."surveyPayload"::jsonb->'result'->>'globalId' as global_id,
+                        survey."surveyPayload"::jsonb->'result'->>'objectId' as object_id
+                    FROM survey
+                    LEFT JOIN site_visit ON survey."siteVisitId" = site_visit.id
+                    LEFT JOIN site ON site_visit."siteId" = site.id
+                """
+            
+            if where_clauses:
+                query += " WHERE " + " AND ".join(where_clauses)
+            
+            query += " LIMIT %s"
+            params.append(limit)
+            
+            results = db.execute_query(query, tuple(params))
+            
+            response = f"Survey Coordinates: {len(results)} record(s)\n\n"
+            response += json.dumps(results, indent=2, default=str)
+            
+            return [TextContent(type="text", text=response)]
+
+        elif name == "query_survey_payload":
+            where_clauses = []
+            params = []
+            
+            if arguments.get("survey_id"):
+                where_clauses.append("survey.id = %s")
+                params.append(arguments["survey_id"])
+            
+            if arguments.get("organization_id"):
+                where_clauses.append('survey."organizationId" = %s')
+                params.append(arguments["organization_id"])
+            
+            if arguments.get("site_id"):
+                where_clauses.append('survey."siteId" = %s')
+                params.append(arguments["site_id"])
+            
+            json_path = arguments["json_path"]
+            limit = arguments.get("limit", 100)
+            
+            # Convert dot notation to PostgreSQL JSON path
+            # e.g., "result.globalId" -> "surveyPayload"::jsonb->'result'->>'globalId'
+            path_parts = json_path.split('.')
+            json_accessor = 'survey."surveyPayload"::jsonb'
+            
+            for i, part in enumerate(path_parts):
+                if i == len(path_parts) - 1:
+                    # Last element, use ->> to get text value
+                    json_accessor += f"->>{repr(part)}"
+                else:
+                    json_accessor += f"->{repr(part)}"
+            
+            query = f"""
+                SELECT 
+                    survey.id as survey_id,
+                    survey.name as survey_name,
+                    survey."siteId" as site_id,
+                    {json_accessor} as extracted_value
+                FROM survey
+                LEFT JOIN site_visit ON survey."siteVisitId" = site_visit.id
+            """
+            
+            if where_clauses:
+                query += " WHERE " + " AND ".join(where_clauses)
+            
+            query += " LIMIT %s"
+            params.append(limit)
+            
+            results = db.execute_query(query, tuple(params))
+            
+            response = f"Survey Payload Query (path: {json_path}): {len(results)} record(s)\n\n"
+            response += json.dumps(results, indent=2, default=str)
+            
+            return [TextContent(type="text", text=response)]
+
+        elif name == "get_surveys_near_location":
+            # First, determine the center coordinates
+            center_lat = arguments.get("latitude")
+            center_lon = arguments.get("longitude")
+            survey_id = arguments.get("survey_id")
+            radius_miles = arguments.get("radius_miles", 10)
+            organization_id = arguments.get("organization_id")
+            limit = arguments.get("limit", 50)
+            
+            # If survey_id provided, get its coordinates first
+            if survey_id and not (center_lat and center_lon):
+                coord_query = """
+                    SELECT 
+                        (survey."surveyPayload"::jsonb->'geometry'->>'y')::float as latitude,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'x')::float as longitude
+                    FROM survey
+                    WHERE survey.id = %s
+                """
+                coord_result = db.execute_query(coord_query, (survey_id,))
+                
+                if not coord_result or not coord_result[0].get('latitude'):
+                    return [TextContent(
+                        type="text",
+                        text=f"No coordinates found for survey_id: {survey_id}"
+                    )]
+                
+                center_lat = coord_result[0]['latitude']
+                center_lon = coord_result[0]['longitude']
+            
+            if not (center_lat and center_lon):
+                return [TextContent(
+                    type="text",
+                    text="Error: Either latitude/longitude or survey_id must be provided"
+                )]
+            
+            # Build WHERE clause
+            where_clauses = [
+                'survey."surveyPayload"::jsonb->\'geometry\' IS NOT NULL',
+                'survey."surveyPayload"::jsonb->\'geometry\'->>\'y\' IS NOT NULL',
+                'survey."surveyPayload"::jsonb->\'geometry\'->>\'x\' IS NOT NULL'
+            ]
+            params = [center_lat, center_lon, center_lat, radius_miles]
+            
+            if organization_id:
+                where_clauses.append('survey."organizationId" = %s')
+                params.append(organization_id)
+            
+            if survey_id:
+                where_clauses.append('survey.id != %s')
+                params.append(survey_id)
+
+            params.append(limit)
+            
+            # Haversine distance calculation using JSON extracted coordinates
+            query = f"""
+                SELECT 
+                    survey.id as survey_id,
+                    survey.name as survey_name,
+                    site_visit."siteId" as site_id,
+                    site.name as site_name,
+                    (survey."surveyPayload"::jsonb->'geometry'->>'y')::float as latitude,
+                    (survey."surveyPayload"::jsonb->'geometry'->>'x')::float as longitude,
+                    (3959 * acos(
+                        cos(radians(%s)) * cos(radians((survey."surveyPayload"::jsonb->'geometry'->>'y')::float)) * 
+                        cos(radians((survey."surveyPayload"::jsonb->'geometry'->>'x')::float) - radians(%s)) + 
+                        sin(radians(%s)) * sin(radians((survey."surveyPayload"::jsonb->'geometry'->>'y')::float))
+                    )) AS distance_miles
+                FROM survey
+                LEFT JOIN site_visit ON survey."siteVisitId" = site_visit.id
+                LEFT JOIN site ON site_visit."siteId" = site.id
+                WHERE {' AND '.join(where_clauses)}
+                HAVING distance_miles <= %s
+                ORDER BY distance_miles
+                LIMIT %s
+            """
+            
+            results = db.execute_query(query, tuple(params))
+            
+            response = f"Surveys within {radius_miles} miles of ({center_lat}, {center_lon}): {len(results)} record(s)\n\n"
+            # Simplify output for token efficiency
+            if len(results) > 10:
+                summary = []
+                for r in results:
+                    summary.append({
+                        'survey_name': r['survey_name'],
+                        'site_name': r['site_name'],
+                        'distance_miles': round(r['distance_miles'], 2)
+                    })
+                response += json.dumps(summary, indent=2, default=str)
+            else:
+                response += json.dumps(results, indent=2, default=str)
+            
+            return [TextContent(type="text", text=response)]
+
+        elif name == "get_weather_for_survey":
+            survey_id = arguments.get("survey_id")
+            site_id = arguments.get("site_id")
+            include_forecast = arguments.get("include_forecast", False)
+            include_extreme_events = arguments.get("include_extreme_events", True)
+            
+            if not survey_id and not site_id:
+                return [TextContent(
+                    type="text",
+                    text="Error: Either survey_id or site_id must be provided"
+                )]
+            
+            # Get coordinates from survey(s)
+            if survey_id:
+                coord_query = """
+                    SELECT 
+                        survey.id as survey_id,
+                        survey.name as survey_name,
+                        site.name as site_name,
+                        site.city,
+                        site.state,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'y')::float as latitude,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'x')::float as longitude
+                    FROM survey
+                    LEFT JOIN site_visit ON survey."siteVisitId" = site_visit.id
+                    LEFT JOIN site ON site_visit."siteId" = site.id
+                    WHERE survey.id = %s
+                """
+                params = (survey_id,)
+            else:
+                coord_query = """
+                    SELECT 
+                        survey.id as survey_id,
+                        survey.name as survey_name,
+                        site.name as site_name,
+                        site.city,
+                        site.state,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'y')::float as latitude,
+                        (survey."surveyPayload"::jsonb->'geometry'->>'x')::float as longitude
+                    FROM survey
+                    LEFT JOIN site_visit ON survey."siteVisitId" = site_visit.id
+                    LEFT JOIN site ON site_visit."siteId" = site.id
+                    WHERE site.id = %s
+                    LIMIT 1
+                """
+                params = (site_id,)
+            
+            survey_results = db.execute_query(coord_query, params)
+            
+            if not survey_results or not survey_results[0].get('latitude'):
+                return [TextContent(
+                    type="text",
+                    text=f"No coordinates found for {'survey' if survey_id else 'site'}"
+                )]
+            
+            survey_data = survey_results[0]
+            lat = survey_data['latitude']
+            lon = survey_data['longitude']
+            location_name = survey_data.get('city', '') + (', ' + survey_data.get('state', '') if survey_data.get('state') else '')
+            
+            response = f"Weather for Survey: {survey_data['survey_name']}\n"
+            response += f"Site: {survey_data['site_name']}\n"
+            response += f"Location: {location_name} ({lat}, {lon})\n\n"
+            response += f"Coordinates: {lat}°N, {lon}°W\n\n"
+            # Use web_search to get current weather
+            # Note: This would require the web_search tool to be called from within this function
+            # or we return instructions for Claude to use web_search
+            
+            response += "To get live weather data, use web_search with:\n"
+            response += f"  Query: 'current weather {lat} {lon}'\n"
+            
+            if include_forecast:
+                response += f"  Forecast query: 'weather forecast {location_name}'\n"
+            
+            if include_extreme_events:
+                response += f"  Extreme events query: 'extreme weather events {location_name} recent'\n"
+            
+            response += f"\nCoordinates ready for weather API calls: {lat}, {lon}"
+            
+            return [TextContent(type="text", text=response)]
+        
+        elif name == "get_overdue_inspections":
+            organization_id = arguments.get("organization_id")
+            inspection_type = arguments.get("inspection_type", "TIA")
+            include_details = arguments.get("include_details", True)
+            
+            # Build WHERE clause for organization filter
+            org_filter = ""
+            params = []
+            if organization_id:
+                org_filter = 'AND survey."organizationId" = %s'
+                params.append(organization_id)
+            
+            # Query to find the most recent survey for each site and check if overdue
+            # Guyed towers: 3 years, Self-support/Monopole: 5 years
+            query = f"""
+                WITH latest_surveys AS (
+                    SELECT 
+                        survey."siteId",
+                        s.name as site_name,
+                        s.address,
+                        s.city,
+                        s.state,
+                        survey.id as survey_id,
+                        survey.name as survey_name,
+                        survey."createdAt" as last_inspection_date,
+                        survey."surveyPayload"::jsonb->'structureType'->>'type' as structure_type,
+                        ROW_NUMBER() OVER (PARTITION BY survey."siteId" ORDER BY survey."createdAt" DESC) as rn
+                    FROM survey
+                    LEFT JOIN site s ON survey."siteId" = s.id
+                    WHERE survey."surveyPayload" IS NOT NULL
+                    {org_filter}
+                ),
+                categorized_surveys AS (
+                    SELECT 
+                        *,
+                        CASE 
+                            WHEN LOWER(structure_type) LIKE '%guyed%' THEN 3
+                            WHEN LOWER(structure_type) LIKE '%monopole%' THEN 5
+                            WHEN LOWER(structure_type) LIKE '%self%support%' THEN 5
+                            WHEN LOWER(structure_type) LIKE '%self-support%' THEN 5
+                            ELSE 5  -- Default to 5 years for unknown types
+                        END as years_required,
+                        CASE 
+                            WHEN LOWER(structure_type) LIKE '%guyed%' THEN 'Guyed'
+                            WHEN LOWER(structure_type) LIKE '%monopole%' THEN 'Monopole'
+                            WHEN LOWER(structure_type) LIKE '%self%support%' THEN 'Self-Support'
+                            WHEN LOWER(structure_type) LIKE '%self-support%' THEN 'Self-Support'
+                            ELSE 'Unknown'
+                        END as tower_category
+                    FROM latest_surveys
+                    WHERE rn = 1
+                )
+                SELECT 
+                    "siteId",
+                    site_name,
+                    address,
+                    city,
+                    state,
+                    survey_id,
+                    survey_name,
+                    last_inspection_date,
+                    structure_type,
+                    tower_category,
+                    years_required,
+                    EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_inspection_date::date)) as years_since_inspection,
+                    EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_inspection_date::date)) 
+                        + (EXTRACT(MONTH FROM AGE(CURRENT_DATE, last_inspection_date::date)) / 12.0) as exact_years_since,
+                    CASE 
+                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_inspection_date::date)) >= years_required 
+                        THEN 'OVERDUE'
+                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_inspection_date::date)) >= (years_required - 1)
+                        THEN 'DUE SOON'
+                        ELSE 'CURRENT'
+                    END as inspection_status
+                FROM categorized_surveys
+                WHERE EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_inspection_date::date)) >= years_required
+                ORDER BY exact_years_since DESC
+            """
+            
+            try:
+                results = db.execute_query(query, tuple(params))
+                
+                if not results:
+                    response = "No overdue inspections found!\n\n"
+                    if organization_id:
+                        response += f"All sites for organization {organization_id} have current inspections."
+                    else:
+                        response += "All sites have current inspections."
+                    return [TextContent(type="text", text=response)]
+                
+                # Build response
+                response = f"OVERDUE INSPECTIONS REPORT\n"
+                response += f"{'='*60}\n\n"
+                response += f"Total Overdue Sites: {len(results)}\n\n"
+                
+                # Group by tower type
+                guyed_count = sum(1 for r in results if r['tower_category'] == 'Guyed')
+                monopole_count = sum(1 for r in results if r['tower_category'] == 'Monopole')
+                self_support_count = sum(1 for r in results if r['tower_category'] == 'Self-Support')
+                unknown_count = sum(1 for r in results if r['tower_category'] == 'Unknown')
+                
+                response += "Breakdown by Tower Type:\n"
+                response += f"  • Guyed (>3 years): {guyed_count}\n"
+                response += f"  • Monopole (>5 years): {monopole_count}\n"
+                response += f"  • Self-Support (>5 years): {self_support_count}\n"
+                if unknown_count > 0:
+                    response += f"  • Unknown Type (>5 years): {unknown_count}\n"
+                response += "\n"
+                
+                if include_details:
+                    response += f"{'='*60}\n"
+                    response += "DETAILED OVERDUE SITES:\n"
+                    response += f"{'='*60}\n\n"
+                    
+                    for idx, site in enumerate(results, 1):
+                        response += f"{idx}. {site['site_name']}\n"
+                        response += f"   Location: {site['address']}, {site['city']}, {site['state']}\n"
+                        response += f"   Tower Type: {site['tower_category']} ({site['structure_type']})\n"
+                        response += f"   Last Inspection: {site['last_inspection_date']}\n"
+                        response += f"   Years Since: {site['exact_years_since']:.1f} years\n"
+                        response += f"   Required Interval: {site['years_required']} years\n"
+                        response += f"   Status: {site['inspection_status']}\n"
+                        response += f"   Overdue By: {site['exact_years_since'] - site['years_required']:.1f} years\n"
+                        response += f"   Site ID: {site['siteId']}\n"
+                        response += f"   Survey ID: {site['survey_id']}\n"
+                        response += "\n"
+                else:
+                    # Just show summary table
+                    response += "\nSummary (Site Name | Type | Years Since | Status):\n"
+                    response += "-" * 80 + "\n"
+                    for site in results:
+                        response += f"{site['site_name'][:30]:30} | "
+                        response += f"{site['tower_category']:15} | "
+                        response += f"{site['exact_years_since']:5.1f} years | "
+                        response += f"{site['inspection_status']}\n"
+                
+                return [TextContent(type="text", text=response)]
+                
+            except Exception as e:
+                logger.error(f"Error in get_overdue_inspections: {str(e)}", exc_info=True)
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting overdue inspections: {str(e)}"
+                )]
+
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
     

@@ -82,13 +82,22 @@ class MCPClient:
             for tool in response.tools
         ]
 
+        print(f"\nTool count: {len(available_tools)}")
+
         # Initial Claude API call
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
-            max_tokens=2000,
+            max_tokens=4000,
             messages=messages,
             tools=available_tools
         )
+
+        # Initialize token tracking BEFORE using them
+        total_input_tokens = response.usage.input_tokens
+        total_output_tokens = response.usage.output_tokens
+
+        print(f"Input tokens: {response.usage.input_tokens}")
+        print(f"Output tokens: {response.usage.output_tokens}")
 
         # Track conversation and tool calls
         conversation_parts = []
@@ -114,6 +123,8 @@ class MCPClient:
                         "arguments": tool_args
                     })
 
+                    print(f"\nCalling tool: {tool_name}")
+
                     # Execute tool via MCP
                     result = await self.session.call_tool(tool_name, tool_args)
                     
@@ -138,16 +149,22 @@ class MCPClient:
             # Get next response from Claude
             response = self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
-                max_tokens=2000,
+                max_tokens=4000,
                 messages=messages,
                 tools=available_tools
             )
+
+            total_input_tokens += response.usage.input_tokens
+            total_output_tokens += response.usage.output_tokens
+            print(f"Cumulative input tokens: {total_input_tokens}")
 
         # Extract final text response
         final_text = ""
         for content_block in response.content:
             if content_block.type == "text":
                 final_text += content_block.text
+
+        print(f"\nTOTAL - Input: {total_input_tokens}, Output: {total_output_tokens}")
 
         return {
             "response": final_text,
