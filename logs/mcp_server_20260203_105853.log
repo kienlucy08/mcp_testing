@@ -1,0 +1,195 @@
+2026-02-03 10:58:53,262 - INFO - __main__ - Environment loaded
+2026-02-03 10:58:53,263 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 10:58:53,263 - INFO - __main__ -   User: postgres
+2026-02-03 10:58:53,278 - INFO - __main__ - ============================================================
+2026-02-03 10:58:53,278 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 10:58:53,279 - INFO - __main__ - ============================================================
+2026-02-03 10:58:53,279 - INFO - __main__ - Database Type: postgres
+2026-02-03 10:58:53,282 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 10:58:53,282 - INFO - __main__ - Database Name: postgres
+2026-02-03 10:58:53,282 - INFO - __main__ - Database User: postgres
+2026-02-03 10:58:53,282 - INFO - __main__ - Testing database connection...
+2026-02-03 10:58:53,701 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 10:58:53,701 - INFO - __main__ - Caching database schema...
+2026-02-03 11:00:20,828 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 11:00:20,828 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 11:00:20,844 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 11:00:29,429 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 11:00:29,431 - INFO - __main__ - >>> Fetching site data for 1a7fbff1-5b9d-4c6d-9984-11f31811ec12
+2026-02-03 11:00:29,958 - INFO - __main__ - >>> Query returned 1 results
+2026-02-03 11:00:29,958 - INFO - __main__ - >>> Extracted coordinates: lat=31.14960034, lon=-90.46510662
+2026-02-03 11:00:29,958 - INFO - __main__ - >>> CALLING WEATHER API for 31.14960034, -90.46510662
+2026-02-03 11:00:30,945 - INFO - __main__ - >>> Weather API returned: ['current', 'forecast', 'success']
+2026-02-03 11:00:30,946 - INFO - __main__ - >>> Weather success: True
+2026-02-03 11:00:30,947 - INFO - __main__ - >>> Formatting weather data...
+2026-02-03 11:00:30,973 - INFO - __main__ - >>> Adding extreme weather check...
+2026-02-03 11:00:30,973 - INFO - __main__ - >>> WEATHER TOOL COMPLETE - returning 1053 chars
+2026-02-03 13:00:22,501 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:24,632 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:28,497 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:28,502 - INFO - __main__ - Executing query: Get complete information for survey with ID 32df6597-e293-4547-986a-fc865d443d6b
+2026-02-03 13:00:28,502 - INFO - __main__ - SQL: SELECT * FROM survey WHERE id = %s
+2026-02-03 13:00:28,502 - INFO - __main__ - Params: ('32df6597-e293-4547-986a-fc865d443d6b',)
+2026-02-03 13:00:33,427 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:33,429 - INFO - __main__ - Executing query: Get survey with related site visit and survey type information
+2026-02-03 13:00:33,429 - INFO - __main__ - SQL: SELECT s.*, sv.siteId, sv.visitDate, sv.technicianId, st.name as survey_type_name 
+FROM survey s 
+LEFT JOIN site_visit sv ON s.siteVisitId = sv.id 
+LEFT JOIN survey_type st ON s.surveyTypeId = st.id 
+WHERE s.id = %s
+2026-02-03 13:00:33,430 - INFO - __main__ - Params: ('32df6597-e293-4547-986a-fc865d443d6b',)
+2026-02-03 13:00:33,840 - ERROR - __main__ - Database error: column s.sitevisitid does not exist
+LINE 3: LEFT JOIN site_visit sv ON s.siteVisitId = sv.id 
+                                   ^
+HINT:  Perhaps you meant to reference the column "s.siteVisitId".
+
+2026-02-03 13:00:33,840 - ERROR - __main__ - Error in execute_query: Database error: column s.sitevisitid does not exist
+LINE 3: LEFT JOIN site_visit sv ON s.siteVisitId = sv.id 
+                                   ^
+HINT:  Perhaps you meant to reference the column "s.siteVisitId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column s.sitevisitid does not exist
+LINE 3: LEFT JOIN site_visit sv ON s.siteVisitId = sv.id 
+                                   ^
+HINT:  Perhaps you meant to reference the column "s.siteVisitId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 753, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column s.sitevisitid does not exist
+LINE 3: LEFT JOIN site_visit sv ON s.siteVisitId = sv.id 
+                                   ^
+HINT:  Perhaps you meant to reference the column "s.siteVisitId".
+
+2026-02-03 13:00:37,744 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:37,746 - INFO - __main__ - Executing query: Get survey with related site visit and survey type information using correct column names
+2026-02-03 13:00:37,747 - INFO - __main__ - SQL: SELECT s.*, sv."siteId", sv."visitDate", sv."technicianId", st.name as survey_type_name 
+FROM survey s 
+LEFT JOIN site_visit sv ON s."siteVisitId" = sv.id 
+LEFT JOIN survey_type st ON s."surveyTypeId" = st.id 
+WHERE s.id = %s
+2026-02-03 13:00:37,747 - INFO - __main__ - Params: ('32df6597-e293-4547-986a-fc865d443d6b',)
+2026-02-03 13:00:38,147 - ERROR - __main__ - Database error: column sv.visitDate does not exist
+LINE 1: SELECT s.*, sv."siteId", sv."visitDate", sv."technicianId", ...
+                                 ^
+
+2026-02-03 13:00:38,147 - ERROR - __main__ - Error in execute_query: Database error: column sv.visitDate does not exist
+LINE 1: SELECT s.*, sv."siteId", sv."visitDate", sv."technicianId", ...
+                                 ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.visitDate does not exist
+LINE 1: SELECT s.*, sv."siteId", sv."visitDate", sv."technicianId", ...
+                                 ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 753, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.visitDate does not exist
+LINE 1: SELECT s.*, sv."siteId", sv."visitDate", sv."technicianId", ...
+                                 ^
+
+2026-02-03 13:00:40,126 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:42,093 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:45,692 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:00:45,701 - INFO - __main__ - Executing query: Get survey with related site visit and survey type information
+2026-02-03 13:00:45,701 - INFO - __main__ - SQL: SELECT s.*, sv."siteId", sv."siteVisitDate", sv."siteName", sv."siteAddress", st.name as survey_type_name 
+FROM survey s 
+LEFT JOIN site_visit sv ON s."siteVisitId" = sv.id 
+LEFT JOIN survey_type st ON s."surveyTypeId" = st.id 
+WHERE s.id = %s
+2026-02-03 13:00:45,702 - INFO - __main__ - Params: ('32df6597-e293-4547-986a-fc865d443d6b',)
+2026-02-03 13:02:25,498 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:27,974 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:29,882 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:31,979 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:34,415 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:36,423 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:38,989 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:41,042 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:43,369 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:45,522 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:47,975 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:50,942 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:50,946 - INFO - __main__ - Executing query: Find the FieldSync organization ID
+2026-02-03 13:02:50,947 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name ILIKE '%fieldsync%'
+2026-02-03 13:02:50,947 - INFO - __main__ - Params: ()
+2026-02-03 13:02:51,270 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 13:02:51,271 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 753, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 13:02:53,602 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:53,605 - INFO - __main__ - Executing query: Get all organizations to find FieldSync
+2026-02-03 13:02:53,606 - INFO - __main__ - SQL: SELECT id, name FROM organization
+2026-02-03 13:02:53,606 - INFO - __main__ - Params: ()
+2026-02-03 13:02:56,698 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:56,700 - INFO - __main__ - Executing query: Find Tower Inspection survey type
+2026-02-03 13:02:56,700 - INFO - __main__ - SQL: SELECT id, name FROM survey_type WHERE name ILIKE '%tower%' OR name ILIKE '%inspection%'
+2026-02-03 13:02:56,700 - INFO - __main__ - Params: ()
+2026-02-03 13:02:57,075 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 13:02:57,076 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 753, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 13:02:59,451 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:02:59,453 - INFO - __main__ - Executing query: Get all survey types to find Tower Inspection
+2026-02-03 13:02:59,453 - INFO - __main__ - SQL: SELECT id, name FROM survey_type
+2026-02-03 13:02:59,453 - INFO - __main__ - Params: ()
+2026-02-03 13:03:02,139 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:03:02,141 - INFO - __main__ - Executing query: Get all survey types to find Tower Inspection
+2026-02-03 13:03:02,141 - INFO - __main__ - SQL: SELECT id, name FROM survey_type ORDER BY name
+2026-02-03 13:03:02,142 - INFO - __main__ - Params: ()
+2026-02-03 13:03:05,772 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:04:04,444 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:04:06,408 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:04:10,755 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest

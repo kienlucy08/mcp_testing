@@ -1,0 +1,83 @@
+2026-02-03 13:20:09,704 - INFO - __main__ - Environment loaded
+2026-02-03 13:20:09,704 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 13:20:09,704 - INFO - __main__ -   User: postgres
+2026-02-03 13:20:09,718 - INFO - __main__ - ============================================================
+2026-02-03 13:20:09,718 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 13:20:09,718 - INFO - __main__ - ============================================================
+2026-02-03 13:20:09,718 - INFO - __main__ - Database Type: postgres
+2026-02-03 13:20:09,719 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 13:20:09,719 - INFO - __main__ - Database Name: postgres
+2026-02-03 13:20:09,719 - INFO - __main__ - Database User: postgres
+2026-02-03 13:20:09,719 - INFO - __main__ - Testing database connection...
+2026-02-03 13:20:10,268 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 13:20:10,268 - INFO - __main__ - Caching database schema...
+2026-02-03 13:21:39,900 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 13:21:39,901 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 13:21:39,928 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 13:22:39,943 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:42,042 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:43,715 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:45,424 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:48,192 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:50,196 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:52,395 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:54,029 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:57,068 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:22:57,077 - INFO - __main__ - Executing query: Find FieldSync organization ID
+2026-02-03 13:22:57,078 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name ILIKE '%fieldsync%' OR name ILIKE '%field sync%'
+2026-02-03 13:22:57,079 - INFO - __main__ - Params: ()
+2026-02-03 13:22:57,776 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 13:22:57,777 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 13:22:59,853 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:02,138 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:02,148 - INFO - __main__ - Executing query: Find FieldSync organization
+2026-02-03 13:23:02,149 - INFO - __main__ - SQL: SELECT * FROM organization WHERE LOWER(name) LIKE '%fieldsync%'
+2026-02-03 13:23:02,149 - INFO - __main__ - Params: ()
+2026-02-03 13:23:02,520 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 13:23:02,521 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 13:23:04,786 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:04,795 - INFO - __main__ - Executing query: List organizations to find FieldSync
+2026-02-03 13:23:04,796 - INFO - __main__ - SQL: SELECT id, name FROM organization LIMIT 10
+2026-02-03 13:23:04,797 - INFO - __main__ - Params: ()
+2026-02-03 13:23:08,164 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:10,220 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:11,886 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:13,506 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:15,637 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:17,682 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:23:19,823 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:24:02,252 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest

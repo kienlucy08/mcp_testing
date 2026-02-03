@@ -1,0 +1,247 @@
+2026-02-03 13:36:16,189 - INFO - __main__ - Environment loaded
+2026-02-03 13:36:16,190 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 13:36:16,190 - INFO - __main__ -   User: postgres
+2026-02-03 13:36:16,203 - INFO - __main__ - ============================================================
+2026-02-03 13:36:16,203 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 13:36:16,203 - INFO - __main__ - ============================================================
+2026-02-03 13:36:16,203 - INFO - __main__ - Database Type: postgres
+2026-02-03 13:36:16,206 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 13:36:16,206 - INFO - __main__ - Database Name: postgres
+2026-02-03 13:36:16,206 - INFO - __main__ - Database User: postgres
+2026-02-03 13:36:16,206 - INFO - __main__ - Testing database connection...
+2026-02-03 13:36:16,661 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 13:36:16,661 - INFO - __main__ - Caching database schema...
+2026-02-03 13:37:47,655 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 13:37:47,656 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 13:37:47,671 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 13:38:13,548 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:13,551 - INFO - __main__ - >>> Finding sites needing inspection (>3 years since last visit)
+2026-02-03 13:38:13,551 - INFO - __main__ - >>> Cutoff date: 2023-02-04
+2026-02-03 13:38:13,551 - INFO - __main__ - >>> Executing query...
+2026-02-03 13:38:13,966 - ERROR - __main__ - Database error: column sv.scheduledDate does not exist
+LINE 10:                         MAX(sv."scheduledDate") as last_visi...
+                                     ^
+
+2026-02-03 13:38:13,967 - ERROR - __main__ - Error in get_sites_needing_inspection: Database error: column sv.scheduledDate does not exist
+LINE 10:                         MAX(sv."scheduledDate") as last_visi...
+                                     ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.scheduledDate does not exist
+LINE 10:                         MAX(sv."scheduledDate") as last_visi...
+                                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1286, in call_tool
+    results = db.execute_query(query, tuple(params))
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.scheduledDate does not exist
+LINE 10:                         MAX(sv."scheduledDate") as last_visi...
+                                     ^
+
+2026-02-03 13:38:16,968 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:18,941 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:20,540 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:22,879 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:24,895 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:27,356 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:36,713 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:36,717 - INFO - __main__ - Executing query: Find all towers (structures) that are overdue for inspection - sites that haven't had a visit in over 3 years or never been visited
+2026-02-03 13:38:36,718 - INFO - __main__ - SQL: WITH site_last_visits AS (
+    SELECT 
+        s.id as site_id,
+        s.name as site_name,
+        s.address as site_address,
+        s.internalId as site_internal_id,
+        MAX(sv.siteVisitDate) as last_visit_date,
+        COUNT(sv.id) as total_visits
+    FROM site s
+    LEFT JOIN site_visit sv ON s.id = sv.siteId
+    GROUP BY s.id, s.name, s.address, s.internalId
+),
+overdue_sites AS (
+    SELECT *,
+        CASE 
+            WHEN last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                ROUND(EXTRACT(EPOCH FROM (NOW() - last_visit_date)) / (365.25 * 24 * 3600), 1),
+                ' years ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN last_visit_date IS NULL THEN true
+            ELSE last_visit_date < (NOW() - INTERVAL '3 years')
+        END as is_overdue
+    FROM site_last_visits
+)
+SELECT 
+    os.site_name,
+    os.site_address,
+    os.site_internal_id,
+    st.name as tower_name,
+    st.type as tower_type,
+    st.constructedHeight as tower_height_ft,
+    st.internalId as tower_internal_id,
+    st.fccAsrNumber as fcc_asr_number,
+    os.last_visit_date,
+    os.time_since_last_visit,
+    os.total_visits
+FROM overdue_sites os
+INNER JOIN structure st ON os.site_id = st.siteId
+WHERE os.is_overdue = true
+ORDER BY 
+    os.last_visit_date ASC NULLS FIRST,
+    os.site_name,
+    st.name
+2026-02-03 13:38:36,718 - INFO - __main__ - Params: ()
+2026-02-03 13:38:37,208 - ERROR - __main__ - Database error: column sv.siteid does not exist
+LINE 10:     LEFT JOIN site_visit sv ON s.id = sv.siteId
+                                               ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+
+2026-02-03 13:38:37,208 - ERROR - __main__ - Error in execute_query: Database error: column sv.siteid does not exist
+LINE 10:     LEFT JOIN site_visit sv ON s.id = sv.siteId
+                                               ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.siteid does not exist
+LINE 10:     LEFT JOIN site_visit sv ON s.id = sv.siteId
+                                               ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.siteid does not exist
+LINE 10:     LEFT JOIN site_visit sv ON s.id = sv.siteId
+                                               ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+
+2026-02-03 13:38:43,281 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:43,288 - INFO - __main__ - Executing query: Find all towers (structures) that are overdue for inspection - sites that haven't had a visit in over 3 years or never been visited
+2026-02-03 13:38:43,289 - INFO - __main__ - SQL: WITH site_last_visits AS (
+    SELECT 
+        s.id as site_id,
+        s.name as site_name,
+        s.address as site_address,
+        s."internalId" as site_internal_id,
+        MAX(sv."siteVisitDate") as last_visit_date,
+        COUNT(sv.id) as total_visits
+    FROM site s
+    LEFT JOIN site_visit sv ON s.id = sv."siteId"
+    GROUP BY s.id, s.name, s.address, s."internalId"
+),
+overdue_sites AS (
+    SELECT *,
+        CASE 
+            WHEN last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                ROUND(EXTRACT(EPOCH FROM (NOW() - last_visit_date)) / (365.25 * 24 * 3600), 1),
+                ' years ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN last_visit_date IS NULL THEN true
+            ELSE last_visit_date < (NOW() - INTERVAL '3 years')
+        END as is_overdue
+    FROM site_last_visits
+)
+SELECT 
+    os.site_name,
+    os.site_address,
+    os.site_internal_id,
+    st.name as tower_name,
+    st.type as tower_type,
+    st."constructedHeight" as tower_height_ft,
+    st."internalId" as tower_internal_id,
+    st."fccAsrNumber" as fcc_asr_number,
+    os.last_visit_date,
+    os.time_since_last_visit,
+    os.total_visits
+FROM overdue_sites os
+INNER JOIN structure st ON os.site_id = st."siteId"
+WHERE os.is_overdue = true
+ORDER BY 
+    os.last_visit_date ASC NULLS FIRST,
+    os.site_name,
+    st.name
+2026-02-03 13:38:43,290 - INFO - __main__ - Params: ()
+2026-02-03 13:38:52,693 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:38:52,706 - INFO - __main__ - Executing query: Find all towers overdue for inspection with priority levels based on how long it's been since last visit
+2026-02-03 13:38:52,706 - INFO - __main__ - SQL: WITH site_last_visits AS (
+    SELECT 
+        s.id as site_id,
+        s.name as site_name,
+        s.address as site_address,
+        s."internalId" as site_internal_id,
+        MAX(sv."siteVisitDate") as last_visit_date,
+        COUNT(CASE WHEN sv.id IS NOT NULL THEN 1 END) as total_visits
+    FROM site s
+    LEFT JOIN site_visit sv ON s.id = sv."siteId"
+    GROUP BY s.id, s.name, s.address, s."internalId"
+),
+overdue_sites AS (
+    SELECT *,
+        CASE 
+            WHEN last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                ROUND(EXTRACT(EPOCH FROM (NOW() - last_visit_date)) / (365.25 * 24 * 3600), 1),
+                ' years ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN last_visit_date IS NULL THEN true
+            ELSE last_visit_date < (NOW() - INTERVAL '3 years')
+        END as is_overdue
+    FROM site_last_visits
+)
+SELECT 
+    os.site_name,
+    os.site_address,
+    os.site_internal_id,
+    st.name as tower_name,
+    st.type as tower_type,
+    st."constructedHeight" as tower_height_ft,
+    st."internalId" as tower_internal_id,
+    st."fccAsrNumber" as fcc_asr_number,
+    os.last_visit_date,
+    os.time_since_last_visit,
+    os.total_visits,
+    CASE 
+        WHEN os.last_visit_date IS NULL THEN 'CRITICAL - Never Inspected'
+        WHEN os.last_visit_date < (NOW() - INTERVAL '5 years') THEN 'CRITICAL - 5+ Years Overdue'
+        WHEN os.last_visit_date < (NOW() - INTERVAL '4 years') THEN 'HIGH - 4+ Years Overdue'
+        ELSE 'MEDIUM - 3+ Years Overdue'
+    END as priority_level
+FROM overdue_sites os
+INNER JOIN structure st ON os.site_id = st."siteId"
+WHERE os.is_overdue = true
+ORDER BY 
+    CASE 
+        WHEN os.last_visit_date IS NULL THEN 1
+        ELSE 2
+    END,
+    os.last_visit_date ASC,
+    st."constructedHeight" DESC,
+    os.site_name
+2026-02-03 13:38:52,707 - INFO - __main__ - Params: ()

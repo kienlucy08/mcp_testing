@@ -1,0 +1,379 @@
+2026-02-03 14:58:43,926 - INFO - __main__ - Environment loaded
+2026-02-03 14:58:43,926 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 14:58:43,926 - INFO - __main__ -   User: postgres
+2026-02-03 14:58:43,940 - INFO - __main__ - ============================================================
+2026-02-03 14:58:43,941 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 14:58:43,941 - INFO - __main__ - ============================================================
+2026-02-03 14:58:43,941 - INFO - __main__ - Database Type: postgres
+2026-02-03 14:58:43,941 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 14:58:43,942 - INFO - __main__ - Database Name: postgres
+2026-02-03 14:58:43,942 - INFO - __main__ - Database User: postgres
+2026-02-03 14:58:43,942 - INFO - __main__ - Testing database connection...
+2026-02-03 14:58:44,368 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 14:58:44,368 - INFO - __main__ - Caching database schema...
+2026-02-03 15:00:22,060 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 15:00:22,060 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 15:00:22,078 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 15:00:50,758 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:00:52,411 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:00:54,496 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:00:57,097 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:00:59,130 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:01,419 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:03,540 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:05,642 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:07,525 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:12,963 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:12,965 - INFO - __main__ - Executing query: Find all towers/structures that have safety climb related deficiencies
+2026-02-03 15:01:12,965 - INFO - __main__ - SQL: SELECT DISTINCT 
+    s.id as structure_id,
+    s.name as structure_name,
+    s.type as structure_type,
+    s.constructedHeight,
+    s.fccAsrNumber,
+    s.safetyClimbPresent,
+    site.name as site_name,
+    COUNT(d.id) as deficiency_count
+FROM structure s
+JOIN site ON s.siteId = site.id
+JOIN site_visit sv ON site.id = sv.siteId
+JOIN survey surv ON sv.id = surv.siteVisitId
+JOIN deficiency d ON surv.id = d.surveyId
+WHERE d.deficiencyCode LIKE '%safety%climb%' 
+   OR d.name ILIKE '%safety%climb%'
+   OR d.description ILIKE '%safety%climb%'
+   OR d.deficiencyLocation ILIKE '%safety%climb%'
+   OR d.supportingDetail ILIKE '%safety%climb%'
+GROUP BY s.id, s.name, s.type, s.constructedHeight, s.fccAsrNumber, s.safetyClimbPresent, site.name
+ORDER BY deficiency_count DESC, s.name
+2026-02-03 15:01:12,965 - INFO - __main__ - Params: ()
+2026-02-03 15:01:13,291 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:01:13,292 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:01:15,592 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:21,374 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:21,376 - INFO - __main__ - Executing query: Find all towers/structures that have safety climb related deficiencies (F1 codes or safety climb in description/name)
+2026-02-03 15:01:21,376 - INFO - __main__ - SQL: SELECT DISTINCT 
+    s.id as structure_id,
+    s.name as structure_name,
+    s.type as structure_type,
+    s.constructedHeight,
+    s.fccAsrNumber,
+    s.safetyClimbPresent,
+    site.name as site_name,
+    COUNT(d.id) as safety_climb_deficiency_count
+FROM structure s
+JOIN site ON s.siteId = site.id
+JOIN site_visit sv ON site.id = sv.siteId
+JOIN survey surv ON sv.id = surv.siteVisitId
+JOIN deficiency d ON surv.id = d.surveyId
+WHERE d.deficiencyCode LIKE 'F1%'
+   OR d.description ILIKE '%safety%climb%'
+   OR d.name ILIKE '%safety%climb%'
+GROUP BY s.id, s.name, s.type, s.constructedHeight, s.fccAsrNumber, s.safetyClimbPresent, site.name
+ORDER BY safety_climb_deficiency_count DESC, s.name
+2026-02-03 15:01:21,376 - INFO - __main__ - Params: ()
+2026-02-03 15:01:21,703 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:01:21,703 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:01:24,780 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:29,646 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:29,650 - INFO - __main__ - Executing query: Find structures that have safety climb deficiencies
+2026-02-03 15:01:29,650 - INFO - __main__ - SQL: SELECT 
+    s.id,
+    s.name as structure_name,
+    s.type,
+    s.constructedHeight,
+    s.safetyClimbPresent,
+    site.name as site_name
+FROM structure s
+JOIN site ON s.siteId = site.id
+WHERE s.id IN (
+    SELECT DISTINCT surv.id 
+    FROM survey surv
+    JOIN deficiency d ON surv.id = d.surveyId
+    WHERE d.deficiencyCode LIKE 'F1%' 
+       OR d.description ILIKE '%safety%climb%'
+       OR d.name ILIKE '%safety%climb%'
+)
+ORDER BY s.name
+2026-02-03 15:01:29,651 - INFO - __main__ - Params: ()
+2026-02-03 15:01:29,985 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:01:29,986 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:01:33,223 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:01:33,225 - INFO - __main__ - Executing query: Find all safety climb related deficiencies
+2026-02-03 15:01:33,226 - INFO - __main__ - SQL: SELECT 
+    d.id,
+    d.name,
+    d.deficiencyCode,
+    d.description,
+    d.severity,
+    d.elevation,
+    d.notes
+FROM deficiency d
+WHERE d.deficiencyCode LIKE 'F1%' 
+   OR d.description ILIKE '%safety%climb%'
+   OR d.name ILIKE '%safety%climb%'
+LIMIT 10
+2026-02-03 15:01:33,226 - INFO - __main__ - Params: ()
+2026-02-03 15:01:33,550 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:01:33,550 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:02:03,196 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:02:05,524 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:02:08,020 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:02:11,428 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:02:11,431 - INFO - __main__ - Executing query: Find deficiencies with F1 codes (safety climb related)
+2026-02-03 15:02:11,431 - INFO - __main__ - SQL: SELECT DISTINCT 
+    d.id,
+    d.deficiencyCode,
+    d.name,
+    d.description,
+    d.severity
+FROM deficiency d
+WHERE d.deficiencyCode LIKE 'F1%' 
+LIMIT 10
+2026-02-03 15:02:11,431 - INFO - __main__ - Params: ()
+2026-02-03 15:02:11,753 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:02:11,754 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:03:04,900 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:03:07,352 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:03:09,827 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:03:15,677 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:03:15,685 - INFO - __main__ - Executing query: Get all towers with safety climb deficiencies (F1 codes)
+2026-02-03 15:03:15,685 - INFO - __main__ - SQL: SELECT DISTINCT
+    s.id as site_id,
+    s.name as site_name,
+    sb.name as structure_name,
+    sb.type as structure_type,
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.deficiencyCode,
+    d.severity,
+    d.elevation,
+    d.notes,
+    d.deficiencyLocation,
+    d.createdAt as deficiency_date
+FROM deficiency d
+JOIN survey sv ON d.surveyId = sv.id
+JOIN structure_base sb ON sv.structureId = sb.id
+JOIN site s ON sb.siteId = s.id
+WHERE d.deficiencyCode LIKE 'F1%'
+ORDER BY s.name, sb.name, d.severity, d.createdAt DESC
+2026-02-03 15:03:15,686 - INFO - __main__ - Params: ()
+2026-02-03 15:03:16,047 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:03:16,047 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:03:17,712 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:03:19,714 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:04:07,136 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:04:07,138 - INFO - __main__ - Executing query: Get all towers/sites with safety climb deficiencies (F1 codes)
+2026-02-03 15:04:07,138 - INFO - __main__ - SQL: SELECT DISTINCT
+    s.id as site_id,
+    s.name as site_name,
+    sv.siteName as visit_site_name,
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.deficiencyCode,
+    d.severity,
+    d.elevation,
+    d.notes,
+    d.deficiencyLocation,
+    d.createdAt as deficiency_date
+FROM deficiency d
+JOIN survey sur ON d.surveyId = sur.id
+JOIN site_visit sv ON sur.siteVisitId = sv.id
+JOIN site s ON sv.siteId = s.id
+WHERE d.deficiencyCode LIKE 'F1%'
+ORDER BY s.name, d.severity, d.createdAt DESC
+2026-02-03 15:04:07,138 - INFO - __main__ - Params: ()
+2026-02-03 15:04:07,504 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:04:07,504 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:04:09,748 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:04:12,322 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:04:18,032 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:04:18,034 - INFO - __main__ - Executing query: Get all towers with safety climb deficiencies (F1 codes) with site information
+2026-02-03 15:04:18,034 - INFO - __main__ - SQL: SELECT 
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.deficiencyCode,
+    d.severity,
+    d.elevation,
+    d.notes,
+    d.deficiencyLocation,
+    d.createdAt as deficiency_date,
+    sv.siteName as site_name,
+    sv.siteIdentifier as site_identifier,
+    sv.structureOwner,
+    s.name as site_table_name,
+    sv.name as site_visit_name
+FROM deficiency d
+JOIN survey sur ON d.surveyId = sur.id
+JOIN site_visit sv ON sur.siteVisitId = sv.id
+LEFT JOIN site s ON sv.siteId = s.id
+WHERE d.deficiencyCode LIKE 'F1%'
+ORDER BY sv.siteName, d.severity, d.createdAt DESC
+2026-02-03 15:04:18,034 - INFO - __main__ - Params: ()
+2026-02-03 15:04:18,351 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:04:18,352 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 15:04:21,905 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 15:04:21,909 - INFO - __main__ - Executing query: Check data integrity for safety climb deficiencies
+2026-02-03 15:04:21,909 - INFO - __main__ - SQL: SELECT 
+    COUNT(*) as total_deficiencies,
+    COUNT(d.surveyId) as deficiencies_with_survey,
+    COUNT(sur.siteVisitId) as surveys_with_site_visit
+FROM deficiency d
+LEFT JOIN survey sur ON d.surveyId = sur.id
+WHERE d.deficiencyCode LIKE 'F1%'
+2026-02-03 15:04:21,909 - INFO - __main__ - Params: ()
+2026-02-03 15:04:22,230 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 15:04:22,231 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range

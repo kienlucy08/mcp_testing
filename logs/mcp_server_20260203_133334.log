@@ -1,0 +1,25 @@
+2026-02-03 13:33:34,868 - INFO - __main__ - Environment loaded
+2026-02-03 13:33:34,869 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 13:33:34,869 - INFO - __main__ -   User: postgres
+2026-02-03 13:33:34,892 - INFO - __main__ - ============================================================
+2026-02-03 13:33:34,893 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 13:33:34,893 - INFO - __main__ - ============================================================
+2026-02-03 13:33:34,893 - INFO - __main__ - Database Type: postgres
+2026-02-03 13:33:34,894 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 13:33:34,894 - INFO - __main__ - Database Name: postgres
+2026-02-03 13:33:34,894 - INFO - __main__ - Database User: postgres
+2026-02-03 13:33:34,894 - INFO - __main__ - Testing database connection...
+2026-02-03 13:33:35,356 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 13:33:35,356 - INFO - __main__ - Caching database schema...
+2026-02-03 13:35:04,146 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 13:35:04,147 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 13:35:04,180 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 13:35:19,583 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:22,189 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:25,738 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:27,977 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:30,106 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:31,821 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:33,864 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:36,307 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 13:35:38,697 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest

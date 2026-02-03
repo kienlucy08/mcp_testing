@@ -1,0 +1,612 @@
+2026-02-03 14:18:23,757 - INFO - __main__ - Environment loaded
+2026-02-03 14:18:23,757 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 14:18:23,757 - INFO - __main__ -   User: postgres
+2026-02-03 14:18:23,780 - INFO - __main__ - ============================================================
+2026-02-03 14:18:23,781 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 14:18:23,781 - INFO - __main__ - ============================================================
+2026-02-03 14:18:23,781 - INFO - __main__ - Database Type: postgres
+2026-02-03 14:18:23,786 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 14:18:23,786 - INFO - __main__ - Database Name: postgres
+2026-02-03 14:18:23,786 - INFO - __main__ - Database User: postgres
+2026-02-03 14:18:23,786 - INFO - __main__ - Testing database connection...
+2026-02-03 14:18:24,253 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 14:18:24,254 - INFO - __main__ - Caching database schema...
+2026-02-03 14:19:51,280 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 14:19:51,280 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 14:19:51,297 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 14:20:07,031 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:09,874 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:09,876 - INFO - __main__ - Executing query: Find the FieldSync organization ID
+2026-02-03 14:20:09,877 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE LOWER(name) LIKE LOWER('%fieldsync%')
+2026-02-03 14:20:09,877 - INFO - __main__ - Params: ()
+2026-02-03 14:20:10,235 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:20:10,235 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:20:12,278 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:15,080 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:15,082 - INFO - __main__ - Executing query: Find the FieldSync organization by name using case-insensitive search
+2026-02-03 14:20:15,082 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name ILIKE '%fieldsync%'
+2026-02-03 14:20:15,082 - INFO - __main__ - Params: ()
+2026-02-03 14:20:15,409 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:20:15,410 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:20:17,907 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:17,910 - INFO - __main__ - Executing query: List first 10 organizations to see available options
+2026-02-03 14:20:17,910 - INFO - __main__ - SQL: SELECT id, name FROM organization LIMIT 10
+2026-02-03 14:20:17,910 - INFO - __main__ - Params: ()
+2026-02-03 14:20:20,646 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:20,651 - INFO - __main__ - >>> Finding sites needing inspection based on tower type
+2026-02-03 14:20:20,651 - INFO - __main__ - >>> Guyed tower cutoff: 2023-02-04 (3 years)
+2026-02-03 14:20:20,652 - INFO - __main__ - >>> Monopole/Self-support cutoff: 2021-02-03 (5 years)
+2026-02-03 14:20:20,652 - INFO - __main__ - >>> Executing query...
+2026-02-03 14:20:20,975 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:20:20,976 - ERROR - __main__ - Error in get_sites_needing_inspection: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1339, in call_tool
+    results = db.execute_query(query, tuple(params))
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:20:23,001 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:23,003 - INFO - __main__ - >>> Finding sites needing inspection based on tower type
+2026-02-03 14:20:23,003 - INFO - __main__ - >>> Guyed tower cutoff: 2023-02-04 (3 years)
+2026-02-03 14:20:23,003 - INFO - __main__ - >>> Monopole/Self-support cutoff: 2021-02-03 (5 years)
+2026-02-03 14:20:23,003 - INFO - __main__ - >>> Executing query...
+2026-02-03 14:20:23,330 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:20:23,330 - ERROR - __main__ - Error in get_sites_needing_inspection: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1339, in call_tool
+    results = db.execute_query(query, tuple(params))
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:20:26,073 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:27,850 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:29,625 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:36,858 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:36,861 - INFO - __main__ - Executing query: Find all sites in FieldSync organization that haven't had a site visit in over 3 years or have never been visited
+2026-02-03 14:20:36,861 - INFO - __main__ - SQL: WITH last_visits AS (
+    SELECT 
+        sv.siteId,
+        MAX(sv.siteVisitDate) as last_visit_date
+    FROM site_visit sv
+    WHERE sv.organizationId = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    GROUP BY sv.siteId
+),
+overdue_sites AS (
+    SELECT 
+        s.id,
+        s.name,
+        s.address,
+        s.internalId,
+        lv.last_visit_date,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                EXTRACT(YEAR FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' years, ',
+                EXTRACT(MONTH FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' months ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 999999
+            ELSE EXTRACT(DAYS FROM AGE(CURRENT_DATE, lv.last_visit_date))
+        END as days_since_last_visit
+    FROM site s
+    LEFT JOIN last_visits lv ON s.id = lv.siteId
+    WHERE s.organizationId = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    AND (lv.last_visit_date IS NULL OR lv.last_visit_date < CURRENT_DATE - INTERVAL '3 years')
+)
+SELECT 
+    id,
+    name,
+    address,
+    internalId as internal_id,
+    last_visit_date,
+    time_since_last_visit
+FROM overdue_sites
+ORDER BY days_since_last_visit DESC, name;
+2026-02-03 14:20:36,861 - INFO - __main__ - Params: ()
+2026-02-03 14:20:37,275 - ERROR - __main__ - Database error: column sv.siteid does not exist
+LINE 3:         sv.siteId,
+                ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+
+2026-02-03 14:20:37,276 - ERROR - __main__ - Error in execute_query: Database error: column sv.siteid does not exist
+LINE 3:         sv.siteId,
+                ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.siteid does not exist
+LINE 3:         sv.siteId,
+                ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.siteid does not exist
+LINE 3:         sv.siteId,
+                ^
+HINT:  Perhaps you meant to reference the column "sv.siteId".
+
+2026-02-03 14:20:40,242 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:40,248 - INFO - __main__ - Executing query: Get exact site-related column names from site_visit table
+2026-02-03 14:20:40,249 - INFO - __main__ - SQL: SELECT column_name FROM information_schema.columns WHERE table_name = 'site_visit' AND column_name ILIKE '%site%';
+2026-02-03 14:20:40,249 - INFO - __main__ - Params: ()
+2026-02-03 14:20:40,560 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:20:40,560 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:20:43,312 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:43,315 - INFO - __main__ - Executing query: Get sample data from site_visit table to see column structure
+2026-02-03 14:20:43,315 - INFO - __main__ - SQL: SELECT * FROM site_visit LIMIT 1;
+2026-02-03 14:20:43,315 - INFO - __main__ - Params: ()
+2026-02-03 14:20:49,447 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:49,455 - INFO - __main__ - Executing query: Find all sites in FieldSync organization that haven't had a site visit in over 3 years or have never been visited
+2026-02-03 14:20:49,456 - INFO - __main__ - SQL: WITH last_visits AS (
+    SELECT 
+        sv."siteId",
+        MAX(sv."siteVisitDate") as last_visit_date
+    FROM site_visit sv
+    WHERE sv."organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    GROUP BY sv."siteId"
+),
+overdue_sites AS (
+    SELECT 
+        s.id,
+        s.name,
+        s.address,
+        s."internalId",
+        lv.last_visit_date,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                EXTRACT(YEAR FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' years, ',
+                EXTRACT(MONTH FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' months ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 999999
+            ELSE EXTRACT(DAYS FROM AGE(CURRENT_DATE, lv.last_visit_date))
+        END as days_since_last_visit
+    FROM site s
+    LEFT JOIN last_visits lv ON s.id = lv."siteId"
+    WHERE s."organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    AND (lv.last_visit_date IS NULL OR lv.last_visit_date < CURRENT_DATE - INTERVAL '3 years')
+)
+SELECT 
+    id,
+    name,
+    address,
+    "internalId" as internal_id,
+    last_visit_date,
+    time_since_last_visit
+FROM overdue_sites
+ORDER BY days_since_last_visit DESC, name;
+2026-02-03 14:20:49,457 - INFO - __main__ - Params: ()
+2026-02-03 14:20:56,109 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:20:56,112 - INFO - __main__ - Executing query: Count summary of overdue sites in FieldSync organization
+2026-02-03 14:20:56,112 - INFO - __main__ - SQL: WITH last_visits AS (
+    SELECT 
+        sv."siteId",
+        MAX(sv."siteVisitDate") as last_visit_date
+    FROM site_visit sv
+    WHERE sv."organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    GROUP BY sv."siteId"
+),
+overdue_sites AS (
+    SELECT 
+        s.id,
+        s.name,
+        s.address,
+        s."internalId",
+        lv.last_visit_date,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                EXTRACT(YEAR FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' years, ',
+                EXTRACT(MONTH FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' months ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 999999
+            ELSE EXTRACT(DAYS FROM AGE(CURRENT_DATE, lv.last_visit_date))
+        END as days_since_last_visit
+    FROM site s
+    LEFT JOIN last_visits lv ON s.id = lv."siteId"
+    WHERE s."organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    AND (lv.last_visit_date IS NULL OR lv.last_visit_date < CURRENT_DATE - INTERVAL '3 years')
+)
+SELECT 
+    count(*) as total_overdue_sites,
+    sum(CASE WHEN last_visit_date IS NULL THEN 1 ELSE 0 END) as never_visited,
+    sum(CASE WHEN last_visit_date IS NOT NULL THEN 1 ELSE 0 END) as overdue_3_years
+FROM overdue_sites;
+2026-02-03 14:20:56,113 - INFO - __main__ - Params: ()
+2026-02-03 14:21:02,689 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:21:02,691 - INFO - __main__ - Executing query: Get details of the site that has been overdue for 3+ years in FieldSync organization
+2026-02-03 14:21:02,691 - INFO - __main__ - SQL: WITH last_visits AS (
+    SELECT 
+        sv."siteId",
+        MAX(sv."siteVisitDate") as last_visit_date
+    FROM site_visit sv
+    WHERE sv."organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    GROUP BY sv."siteId"
+),
+overdue_sites AS (
+    SELECT 
+        s.id,
+        s.name,
+        s.address,
+        s."internalId",
+        lv.last_visit_date,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 'Never visited'
+            ELSE CONCAT(
+                EXTRACT(YEAR FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' years, ',
+                EXTRACT(MONTH FROM AGE(CURRENT_DATE, lv.last_visit_date)), ' months ago'
+            )
+        END as time_since_last_visit,
+        CASE 
+            WHEN lv.last_visit_date IS NULL THEN 999999
+            ELSE EXTRACT(DAYS FROM AGE(CURRENT_DATE, lv.last_visit_date))
+        END as days_since_last_visit
+    FROM site s
+    LEFT JOIN last_visits lv ON s.id = lv."siteId"
+    WHERE s."organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    AND (lv.last_visit_date IS NULL OR lv.last_visit_date < CURRENT_DATE - INTERVAL '3 years')
+)
+SELECT 
+    id,
+    name,
+    address,
+    "internalId" as internal_id,
+    last_visit_date,
+    time_since_last_visit
+FROM overdue_sites
+WHERE last_visit_date IS NOT NULL
+ORDER BY last_visit_date ASC;
+2026-02-03 14:21:02,691 - INFO - __main__ - Params: ()
+2026-02-03 14:49:30,036 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:32,008 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:34,012 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:36,284 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:37,896 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:39,812 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:42,526 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:48,100 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:48,103 - INFO - __main__ - Executing query: Get all towers (structures) that have deficiencies identified during safety climb surveys
+2026-02-03 14:49:48,103 - INFO - __main__ - SQL: SELECT DISTINCT
+    s.id as structure_id,
+    s.name as structure_name,
+    s.type as structure_type,
+    s.ownerStructureId as owner_structure_id,
+    s.constructedHeight,
+    site.name as site_name,
+    site.ownerSiteId as owner_site_id,
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.severity,
+    d.deficiencyCode,
+    d.deficiencyLocation,
+    d.description,
+    d.wholeTowerAffected,
+    d.createdAt as deficiency_created_at
+FROM structure s
+JOIN site ON s.siteId = site.id
+JOIN safety_climb sc ON sc.structureBaseId IN (
+    SELECT sb.id 
+    FROM structure_base sb 
+    WHERE sb.structureId = s.id
+)
+JOIN survey sv ON sc.id = sv.safetyClimbId
+JOIN deficiency d ON d.surveyId = sv.id
+ORDER BY s.name, d.createdAt DESC
+2026-02-03 14:49:48,104 - INFO - __main__ - Params: ()
+2026-02-03 14:49:48,530 - ERROR - __main__ - Database error: column s.siteid does not exist
+LINE 18: JOIN site ON s.siteId = site.id
+                      ^
+HINT:  Perhaps you meant to reference the column "s.siteId".
+
+2026-02-03 14:49:48,530 - ERROR - __main__ - Error in execute_query: Database error: column s.siteid does not exist
+LINE 18: JOIN site ON s.siteId = site.id
+                      ^
+HINT:  Perhaps you meant to reference the column "s.siteId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column s.siteid does not exist
+LINE 18: JOIN site ON s.siteId = site.id
+                      ^
+HINT:  Perhaps you meant to reference the column "s.siteId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column s.siteid does not exist
+LINE 18: JOIN site ON s.siteId = site.id
+                      ^
+HINT:  Perhaps you meant to reference the column "s.siteId".
+
+2026-02-03 14:49:53,145 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:53,153 - INFO - __main__ - Executing query: Get all towers (structures) that have deficiencies identified during safety climb surveys
+2026-02-03 14:49:53,154 - INFO - __main__ - SQL: SELECT DISTINCT
+    s.id as structure_id,
+    s.name as structure_name,
+    s.type as structure_type,
+    s."ownerStructureId" as owner_structure_id,
+    s."constructedHeight",
+    site.name as site_name,
+    site."ownerSiteId" as owner_site_id,
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.severity,
+    d."deficiencyCode",
+    d."deficiencyLocation",
+    d.description,
+    d."wholeTowerAffected",
+    d."createdAt" as deficiency_created_at
+FROM structure s
+JOIN site ON s."siteId" = site.id
+JOIN safety_climb sc ON sc."structureBaseId" IN (
+    SELECT sb.id 
+    FROM structure_base sb 
+    WHERE sb."structureId" = s.id
+)
+JOIN survey sv ON sc.id = sv."safetyClimbId"
+JOIN deficiency d ON d."surveyId" = sv.id
+ORDER BY s.name, d."createdAt" DESC
+2026-02-03 14:49:53,155 - INFO - __main__ - Params: ()
+2026-02-03 14:49:53,597 - ERROR - __main__ - Database error: column sv.safetyClimbId does not exist
+LINE 24: JOIN survey sv ON sc.id = sv."safetyClimbId"
+                                   ^
+
+2026-02-03 14:49:53,598 - ERROR - __main__ - Error in execute_query: Database error: column sv.safetyClimbId does not exist
+LINE 24: JOIN survey sv ON sc.id = sv."safetyClimbId"
+                                   ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.safetyClimbId does not exist
+LINE 24: JOIN survey sv ON sc.id = sv."safetyClimbId"
+                                   ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.safetyClimbId does not exist
+LINE 24: JOIN survey sv ON sc.id = sv."safetyClimbId"
+                                   ^
+
+2026-02-03 14:49:55,710 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:49:57,923 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:50:00,085 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:50:02,094 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:50:04,301 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:50:06,229 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:50:12,341 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:50:12,345 - INFO - __main__ - Executing query: Get all structures (towers) that have deficiencies identified during surveys, with deficiency counts
+2026-02-03 14:50:12,345 - INFO - __main__ - SQL: SELECT DISTINCT
+    s.id as structure_id,
+    s.name as structure_name,
+    s.type as structure_type,
+    s."ownerStructureId" as owner_structure_id,
+    s."constructedHeight",
+    site.name as site_name,
+    site."ownerSiteId" as owner_site_id,
+    COUNT(d.id) as total_deficiencies,
+    COUNT(CASE WHEN d.severity = 'High' THEN 1 END) as high_severity_deficiencies,
+    COUNT(CASE WHEN d.severity = 'Medium' THEN 1 END) as medium_severity_deficiencies,
+    COUNT(CASE WHEN d.severity = 'Low' THEN 1 END) as low_severity_deficiencies,
+    MAX(d."createdAt") as latest_deficiency_date
+FROM structure s
+JOIN site ON s."siteId" = site.id
+JOIN survey sv ON sv."siteVisitId" IN (
+    SELECT svt.id 
+    FROM site_visit svt 
+    WHERE svt."siteId" = site.id
+)
+JOIN deficiency d ON d."surveyId" = sv.id
+GROUP BY s.id, s.name, s.type, s."ownerStructureId", s."constructedHeight", 
+         site.name, site."ownerSiteId"
+ORDER BY total_deficiencies DESC, s.name
+2026-02-03 14:50:12,346 - INFO - __main__ - Params: ()
+2026-02-03 14:51:07,277 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:51:07,283 - INFO - __main__ - Executing query: Find all towers with deficiencies specifically related to safety climb systems
+2026-02-03 14:51:07,284 - INFO - __main__ - SQL: SELECT 
+    s.id as structure_id,
+    s.name as structure_name,
+    s.type as structure_type,
+    s."ownerStructureId" as owner_structure_id,
+    s."constructedHeight",
+    site.name as site_name,
+    site."ownerSiteId" as owner_site_id,
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.description,
+    d."deficiencyCode",
+    d."deficiencyLocation",
+    d.severity,
+    d."createdAt" as deficiency_date,
+    d.notes as deficiency_notes
+FROM structure s
+JOIN site ON s."siteId" = site.id
+JOIN survey sv ON sv."siteVisitId" IN (
+    SELECT svt.id 
+    FROM site_visit svt 
+    WHERE svt."siteId" = site.id
+)
+JOIN deficiency d ON d."surveyId" = sv.id
+WHERE LOWER(d.description) LIKE '%safety%climb%' 
+   OR LOWER(d.description) LIKE '%climb%safety%'
+   OR LOWER(d."deficiencyLocation") LIKE '%safety%climb%'
+   OR LOWER(d."deficiencyLocation") LIKE '%climb%safety%'
+   OR LOWER(d.name) LIKE '%safety%climb%'
+   OR LOWER(d.name) LIKE '%climb%safety%'
+   OR LOWER(d."deficiencyCode") LIKE '%safety%climb%'
+   OR LOWER(d."deficiencyCode") LIKE '%climb%safety%'
+ORDER BY s.name, d."createdAt" DESC
+2026-02-03 14:51:07,284 - INFO - __main__ - Params: ()
+2026-02-03 14:51:07,635 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:51:07,635 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:51:11,569 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:51:11,571 - INFO - __main__ - Executing query: Get most common deficiency codes and descriptions to understand the data
+2026-02-03 14:51:11,571 - INFO - __main__ - SQL: SELECT DISTINCT 
+    d."deficiencyCode",
+    d.description,
+    d."deficiencyLocation",
+    COUNT(*) as count
+FROM deficiency d
+WHERE d.description IS NOT NULL 
+   OR d."deficiencyCode" IS NOT NULL
+   OR d."deficiencyLocation" IS NOT NULL
+GROUP BY d."deficiencyCode", d.description, d."deficiencyLocation"
+ORDER BY count DESC
+LIMIT 20
+2026-02-03 14:51:11,571 - INFO - __main__ - Params: ()
+2026-02-03 14:51:15,503 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 14:51:15,505 - INFO - __main__ - Executing query: Search for any climb-related deficiency codes or descriptions
+2026-02-03 14:51:15,505 - INFO - __main__ - SQL: SELECT DISTINCT 
+    d."deficiencyCode",
+    d.description,
+    d."deficiencyLocation"
+FROM deficiency d
+WHERE LOWER(COALESCE(d.description, '')) LIKE '%climb%' 
+   OR LOWER(COALESCE(d."deficiencyCode", '')) LIKE '%climb%'
+   OR LOWER(COALESCE(d."deficiencyLocation", '')) LIKE '%climb%'
+2026-02-03 14:51:15,505 - INFO - __main__ - Params: ()
+2026-02-03 14:51:15,826 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-03 14:51:15,827 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 773, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-03 14:51:18,336 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest

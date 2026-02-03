@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 from threading import Thread
 import os
+import re
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
@@ -15,7 +16,76 @@ load_dotenv()
 
 ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 
+# Token management constants
+MAX_TOOL_RESULT_CHARS = 3000
+MAX_MESSAGES_HISTORY = 15
+MAX_TOTAL_TOOL_CALLS = 30
+
 app = Flask(__name__)
+
+def truncate_tool_result(result: str, max_chars: int = MAX_TOOL_RESULT_CHARS) -> str:
+    """Truncate tool result to prevent token explosion"""
+    if len(result) > max_chars:
+        return result[:max_chars] + f"\n[TRUNCATED - {len(result) - max_chars} chars omitted]"
+    return result
+
+def select_relevant_tools(query: str, all_tools: list) -> list:
+    """
+    Intelligently select only relevant tools based on the query.
+    This dramatically reduces token usage by not sending all tools every time.
+    """
+    query_lower = query.lower()
+    
+    # Always include these core tools
+    core_tools = ["execute_query", "get_database_schema", "search_schema"]
+    
+    # Tool selection patterns
+    tool_patterns = {
+        "get_table_sample": ["sample", "show me", "example", "what does", "look like"],
+        "find_related_data": ["related", "relationship", "foreign key", "joins"],
+        "query_safety_climbs": ["safety climb", "climb"],
+        "query_deficiencies": ["deficiency", "deficiencies", "issue", "problem", "fault"],
+        "get_sites_needing_inspection": ["overdue", "due", "tia", "inspection needed", "needs inspection", "checkup", "inspection"],
+        
+        # SITE LOCATION TOOLS
+        "get_site_coordinates": ["site coordinate", "site location", "where is site", "site address"],
+        "get_sites_near_location": ["sites near", "sites within", "nearby sites", "sites around", "find sites"],
+        "get_weather_for_site": ["weather for site", "site weather", "weather at site"],
+        
+        # SURVEY LOCATION TOOLS (if you still have these)
+        "get_survey_coordinates": ["survey coordinate", "survey location"],
+        "query_survey_payload": ["payload", "json", "survey data", "extract"],
+        "get_surveys_near_location": ["surveys near", "surveys within"],
+        "get_weather_for_survey": ["weather for survey", "survey weather"],
+    }
+    
+    selected_tools = set(core_tools)
+    
+    # Check query against patterns
+    for tool_name, patterns in tool_patterns.items():
+        if any(pattern in query_lower for pattern in patterns):
+            selected_tools.add(tool_name)
+    
+    # Special cases
+    if any(word in query_lower for word in ["weather", "temperature", "forecast"]):
+        if "site" in query_lower:
+            selected_tools.add("get_weather_for_site")
+            selected_tools.add("get_site_coordinates")
+        if "survey" in query_lower:
+            selected_tools.add("get_weather_for_survey")
+    
+    if any(word in query_lower for word in ["near", "within", "radius", "miles"]):
+        if "site" in query_lower:
+            selected_tools.add("get_sites_near_location")
+            selected_tools.add("get_site_coordinates")
+    
+    # Filter the actual tool definitions
+    relevant_tools = [
+        tool for tool in all_tools 
+        if tool["name"] in selected_tools
+    ]
+    
+    return relevant_tools
 
 class MCPClient:
     def __init__(self):
@@ -24,6 +94,7 @@ class MCPClient:
         self.anthropic = Anthropic(api_key=os.getenv("API_KEY"))
         self.connected = False
         self.tools = []
+        self.all_tools = []  # Store all available tools
 
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server"""
@@ -35,9 +106,8 @@ class MCPClient:
         path = Path(server_script_path).resolve()
         
         if is_python:
-            # Try using python directly instead of uv
             server_params = StdioServerParameters(
-                command="python",  # or "python3" on some systems
+                command="python",
                 args=[str(path)],
                 env=None,
             )
@@ -62,6 +132,16 @@ class MCPClient:
         self.tools = response.tools
         self.connected = True
         
+        # Store formatted tools for dynamic selection
+        self.all_tools = [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": tool.inputSchema
+            }
+            for tool in response.tools
+        ]
+        
         return [tool.name for tool in self.tools]
 
     async def process_query(self, query: str) -> dict:
@@ -71,40 +151,51 @@ class MCPClient:
 
         messages = [{"role": "user", "content": query}]
 
-        # Get available tools
-        response = await self.session.list_tools()
-        available_tools = [
-            {
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": tool.inputSchema
-            }
-            for tool in response.tools
-        ]
+        # DYNAMIC TOOL SELECTION - Only send relevant tools
+        relevant_tools = select_relevant_tools(query, self.all_tools)
+        
+        print(f"\n📊 Total available tools: {len(self.all_tools)}")
+        print(f"📊 Selected relevant tools: {len(relevant_tools)}")
+        print(f"📊 Tools selected: {[t['name'] for t in relevant_tools]}")
 
-        print(f"\nTool count: {len(available_tools)}")
-
-        # Initial Claude API call
+        # Initial Claude API call with only relevant tools
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4000,
             messages=messages,
-            tools=available_tools
+            tools=relevant_tools  # Only send relevant tools!
         )
 
-        # Initialize token tracking BEFORE using them
+        # Initialize token tracking
         total_input_tokens = response.usage.input_tokens
         total_output_tokens = response.usage.output_tokens
 
-        print(f"Input tokens: {response.usage.input_tokens}")
-        print(f"Output tokens: {response.usage.output_tokens}")
+        print(f"📊 Initial input tokens: {response.usage.input_tokens}")
+        print(f"📊 Initial output tokens: {response.usage.output_tokens}")
 
         # Track conversation and tool calls
-        conversation_parts = []
         tools_used = []
+        tool_call_count = 0
 
-        # Process response
+        # Process response with safeguards
         while response.stop_reason == "tool_use":
+            tool_call_count += 1
+
+            # Safety: stop if too many tool calls
+            if tool_call_count > MAX_TOTAL_TOOL_CALLS:
+                print(f"⚠️  Stopping after {MAX_TOTAL_TOOL_CALLS} tool calls")
+                # Add a message explaining we hit the limit
+                final_text = "I've reached the maximum number of tool calls for this query. "
+                final_text += f"Based on {tool_call_count} tool executions, here's what I found: "
+                final_text += "\n\n[Results would be summarized here]"
+                
+                return {
+                    "response": final_text,
+                    "tools_used": tools_used,
+                    "success": True,
+                    "warning": "Hit max tool call limit"
+                }
+
             # Add assistant's response to messages
             messages.append({
                 "role": "assistant",
@@ -117,28 +208,43 @@ class MCPClient:
                 if content_block.type == "tool_use":
                     tool_name = content_block.name
                     tool_args = content_block.input
-                    
+
                     tools_used.append({
                         "name": tool_name,
                         "arguments": tool_args
                     })
 
-                    print(f"\nCalling tool: {tool_name}")
+                    print(f"\n🔧 Calling tool #{tool_call_count}: {tool_name}")
 
-                    # Execute tool via MCP
-                    result = await self.session.call_tool(tool_name, tool_args)
-                    
-                    # Extract text from result
-                    result_text = ""
-                    for item in result.content:
-                        if hasattr(item, 'text'):
-                            result_text += item.text
-                    
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": result_text
-                    })
+                    try:
+                        # Execute tool via MCP
+                        result = await self.session.call_tool(tool_name, tool_args)
+
+                        # Extract text from result
+                        result_text = ""
+                        for item in result.content:
+                            if hasattr(item, 'text'):
+                                result_text += item.text
+
+                        # Truncate tool results
+                        original_length = len(result_text)
+                        result_text = truncate_tool_result(result_text)
+                        
+                        if len(result_text) < original_length:
+                            print(f"   ✂️  Truncated result from {original_length} to {len(result_text)} chars")
+
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": result_text
+                        })
+                    except Exception as e:
+                        print(f"   ❌ Tool execution failed: {str(e)}")
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": f"Error executing tool: {str(e)}"
+                        })
 
             # Add tool results to messages
             messages.append({
@@ -146,17 +252,22 @@ class MCPClient:
                 "content": tool_results
             })
 
-            # Get next response from Claude
+            # Trim message history if too long
+            if len(messages) > MAX_MESSAGES_HISTORY:
+                messages = [messages[0]] + messages[-(MAX_MESSAGES_HISTORY-1):]
+                print(f"✂️  Trimmed message history to {len(messages)} messages")
+
+            # Get next response from Claude (still with only relevant tools)
             response = self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
                 max_tokens=4000,
                 messages=messages,
-                tools=available_tools
+                tools=relevant_tools  # Keep using same relevant tools
             )
 
             total_input_tokens += response.usage.input_tokens
             total_output_tokens += response.usage.output_tokens
-            print(f"Cumulative input tokens: {total_input_tokens}")
+            print(f"📊 Cumulative tokens - Input: {total_input_tokens}, Output: {total_output_tokens}")
 
         # Extract final text response
         final_text = ""
@@ -164,12 +275,18 @@ class MCPClient:
             if content_block.type == "text":
                 final_text += content_block.text
 
-        print(f"\nTOTAL - Input: {total_input_tokens}, Output: {total_output_tokens}")
+        print(f"\n✅ COMPLETE - Total Input: {total_input_tokens}, Output: {total_output_tokens}")
+        print(f"✅ Tool calls made: {tool_call_count}")
 
         return {
             "response": final_text,
             "tools_used": tools_used,
-            "success": True
+            "success": True,
+            "token_usage": {
+                "input_tokens": total_input_tokens,
+                "output_tokens": total_output_tokens,
+                "tool_calls": tool_call_count
+            }
         }
 
     async def cleanup(self):
@@ -194,7 +311,7 @@ thread.start()
 def run_async(coro):
     """Helper to run async functions from sync context"""
     future = asyncio.run_coroutine_threadsafe(coro, event_loop)
-    return future.result(timeout=1800)  # Add timeout
+    return future.result(timeout=1800)
 
 @app.route('/')
 def index():
@@ -209,7 +326,6 @@ def connect():
         if not server_path:
             return jsonify({'error': 'Server path is required'}), 400
         
-        # Validate file exists
         if not Path(server_path).exists():
             return jsonify({'error': f'File not found: {server_path}'}), 400
         
@@ -263,6 +379,7 @@ def disconnect():
         run_async(mcp_client.cleanup())
         mcp_client.connected = False
         mcp_client.tools = []
+        mcp_client.all_tools = []
         return jsonify({'success': True, 'message': 'Disconnected'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -272,8 +389,9 @@ if __name__ == '__main__':
     print("🚀 MCP Web Interface Starting...")
     print("="*60)
     print("\n📍 Open your browser to: http://localhost:5000")
-    print("\n💡 Tips:")
-    print("  - Enter the full path to your mcp_server.py")
-    print("  - Make sure your database is configured correctly")
-    print("  - Check the console for error messages\n")
+    print("\n💡 Features:")
+    print("  - Dynamic tool selection (reduced token usage)")
+    print("  - Automatic result truncation")
+    print("  - Token usage monitoring")
+    print("  - Tool call limits\n")
     app.run(debug=True, port=5000, use_reloader=False)

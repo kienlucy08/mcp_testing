@@ -1,0 +1,96 @@
+2026-02-03 10:47:55,550 - INFO - __main__ - Environment loaded
+2026-02-03 10:47:55,550 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 10:47:55,550 - INFO - __main__ -   User: postgres
+2026-02-03 10:47:55,573 - INFO - __main__ - ============================================================
+2026-02-03 10:47:55,574 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-03 10:47:55,574 - INFO - __main__ - ============================================================
+2026-02-03 10:47:55,574 - INFO - __main__ - Database Type: postgres
+2026-02-03 10:47:55,575 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-03 10:47:55,575 - INFO - __main__ - Database Name: postgres
+2026-02-03 10:47:55,575 - INFO - __main__ - Database User: postgres
+2026-02-03 10:47:55,575 - INFO - __main__ - Testing database connection...
+2026-02-03 10:47:56,007 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-03 10:47:56,007 - INFO - __main__ - Caching database schema...
+2026-02-03 10:49:22,909 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-03 10:49:22,909 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-03 10:49:22,926 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-03 10:49:48,377 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 10:49:48,815 - ERROR - __main__ - Database error: column "city" does not exist
+LINE 6:                     city,
+                            ^
+
+2026-02-03 10:49:48,816 - ERROR - __main__ - Error in get_weather_for_site: Database error: column "city" does not exist
+LINE 6:                     city,
+                            ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "city" does not exist
+LINE 6:                     city,
+                            ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1140, in call_tool
+    results = db.execute_query(query, (site_id,))
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column "city" does not exist
+LINE 6:                     city,
+                            ^
+
+2026-02-03 10:49:51,573 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 10:49:52,003 - ERROR - __main__ - Database error: column "city" does not exist
+LINE 6:                     city,
+                            ^
+
+2026-02-03 10:49:52,004 - ERROR - __main__ - Error in get_site_coordinates: Database error: column "city" does not exist
+LINE 6:                     city,
+                            ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "city" does not exist
+LINE 6:                     city,
+                            ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 996, in call_tool
+    results = db.execute_query(query, (site_id,))
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column "city" does not exist
+LINE 6:                     city,
+                            ^
+
+2026-02-03 10:49:54,486 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 10:49:57,401 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 10:49:57,408 - INFO - __main__ - Executing query: Get location information for the specified site
+2026-02-03 10:49:57,409 - INFO - __main__ - SQL: SELECT id, name, location, address, country, elevation FROM site WHERE id = %s
+2026-02-03 10:49:57,409 - INFO - __main__ - Params: ('1a7fbff1-5b9d-4c6d-9984-11f31811ec12',)
+2026-02-03 10:50:01,869 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-03 10:50:01,872 - INFO - __main__ - Executing query: Get coordinates and location details for the specified site
+2026-02-03 10:50:01,872 - INFO - __main__ - SQL: SELECT 
+    id, 
+    name, 
+    ST_Y(location) as latitude, 
+    ST_X(location) as longitude, 
+    address, 
+    country, 
+    elevation 
+FROM site 
+WHERE id = %s
+2026-02-03 10:50:01,872 - INFO - __main__ - Params: ('1a7fbff1-5b9d-4c6d-9984-11f31811ec12',)
