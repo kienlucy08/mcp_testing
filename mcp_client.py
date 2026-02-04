@@ -155,8 +155,8 @@ class MCPClient:
         print(f"\n📊 Total available tools: {len(self.all_tools)}")
         print(f"📊 Selected relevant tools: {len(relevant_tools)}")
         print(f"📊 Tools selected: {[t['name'] for t in relevant_tools]}")
-
-        # Initial Claude API call with only relevant tools
+        
+            # Initial Claude API call with only relevant tools
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4000,

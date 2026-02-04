@@ -259,7 +259,11 @@ class DatabaseManager:
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
-            cursor.execute(query, params)
+
+            if params and len(params) > 0:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
             
             # Handle SELECT vs non-SELECT queries
             if cursor.description:
@@ -285,7 +289,7 @@ class DatabaseManager:
             table_filter = f"AND table_name IN ({','.join(['%s']*len(table_names))})"
             tables_query = f"""
                 SELECT table_name 
-                FROM information_schema.tables 
+                FROM information_schema.tables
                 WHERE table_schema = 'public'
                 {table_filter}
                 ORDER BY table_name
@@ -294,7 +298,7 @@ class DatabaseManager:
         else:
             tables_query = """
                 SELECT table_name 
-                FROM information_schema.tables 
+                FROM information_schema.tables
                 WHERE table_schema = 'public'
                 ORDER BY table_name
             """
@@ -346,7 +350,7 @@ class DatabaseManager:
         """Search schema for tables/columns matching a term"""
         schema = self.get_schema()
         matches = {
-            'tables': [],
+            'table': [],
             'columns': []
         }
         
@@ -355,7 +359,7 @@ class DatabaseManager:
         for table_name, table_info in schema.items():
             # Check if table name matches
             if search_lower in table_name.lower():
-                matches['tables'].append(table_name)
+                matches['table'].append(table_name)
             
             # Check columns
             for col in table_info['columns']:
@@ -405,7 +409,6 @@ async def list_tools() -> list[Tool]:
                     },
                     "params": {
                         "type": "array",
-                        "items": {"type": ["string", "number", "null"]},
                         "description": "Parameters for the query (optional)"
                     },
                     "description": {
@@ -449,10 +452,6 @@ async def list_tools() -> list[Tool]:
                         "type": "string",
                         "description": "Filter by organization UUID"
                     },
-                    "safety_climb_id": {
-                        "type": "string",
-                        "description": "Filter deficiencies by specific safety climb UUID"
-                    },
                     "severity": {
                         "type": "string",
                         "description": "Filter deficiencies by severity level. 1 is the worst severity, 3 is the least."
@@ -463,9 +462,28 @@ async def list_tools() -> list[Tool]:
                     },
                     "date_from": {
                         "type": "string",
-                        "description": "Start date"
-                    }
-                }
+                        "format": "date",
+                        "description": "Start date for filtering records"
+                    },
+                    "date_to": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "End date for filtering records (ISO 8601 format: YYYY-MM-DD)"
+                    },
+                    "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of records to return per data type",
+                            "default": 100,
+                            "minimum": 1,
+                            "maximum": 1000
+                        },
+                        "include_related": {
+                            "type": "boolean",
+                            "description": "Whether to include related site and organization data in results",
+                            "default": True
+                        }
+                    },
+                    "required": []
             }
         ),
         Tool(
@@ -575,17 +593,17 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 matches = db.search_schema(search_term)
                 response = f"Schema search results for '{search_term}':\n\n"
 
-                if matches['tables']:
+                if matches['table']:
                     response += "Matching Tables:\n"
-                    for table in matches['tables']:
+                    for table in matches['table']:
                         response += f"  - {table}\n"
                     response += "\n"
                 
                 if matches['columns']:
                     response += "Matching Columns:\n"
                     for col in matches['columns']:
-                        response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
-                if not matches['tables'] and not matches['columns']:
+                        response += f"  - {col['table']}.{col['column']} ({col['type']})\n"
+                if not matches['table'] and not matches['columns']:
                     response += "No matches found."
 
                 return [TextContent(type="text", text=response)]
@@ -675,8 +693,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             concept_matches = db.search_schema(concept)
             
             response += f"Tables matching '{concept}':\n"
-            if concept_matches['tables']:
-                for table in concept_matches['tables']:
+            if concept_matches['table']:
+                for table in concept_matches['table']:
                     response += f"  {table}\n"
             else:
                 response += "  (none found)\n"
@@ -751,7 +769,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                         ST_Y(location) as latitude,
                         ST_X(location) as longitude
                     FROM site
-                    WHERE id = %s
+                    WHERE "siteId" = %s
                 """
                 results = db.execute_query(query, (site_id,))
                 if not results:
@@ -851,21 +869,23 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             return [TextContent(type="text", text=response)]
         
         elif name == "query_inspection_data":
-            data_type = arguments.get("data_type", "both")
+            data_type = arguments.get("data_type", "safety_climb")
             organization_id = arguments.get("organization_id")
             site_id = arguments.get("site_id")
-            safety_climb_id = arguments.get("safety_climb_id")
             severity = arguments.get("severity")
-            status = arguments.get("status")
+            survey_id = arguments.get("survey_id")
             date_from = arguments.get("date_from")
             date_to = arguments.get("date_to")
             limit = arguments.get("limit", 100)
             include_related = arguments.get("include_related", True)
+            
             results_data = {}
+            
             # Query safety climbs
-            if data_type in ["safety_climbs", "both"]:
+            if data_type == "safety_climb":
                 where_clauses = []
                 params = []
+                
                 if include_related:
                     base_query = """
                         SELECT
@@ -878,34 +898,39 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                             s.address,
                             o.name as organization_name
                         FROM safety_climb sc
-                        LEFT JOIN site s ON sc."siteId" = s.id
+                        LEFT JOIN structure_base s ON sc."structureBaseId" = s.id
                         LEFT JOIN organization o ON s."organizationId" = o.id
                     """
                 else:
                     base_query = "SELECT * FROM safety_climb sc"
+                
                 if organization_id:
-                    where_clauses.append('s."organizationId" = %s')
+                    where_clauses.append('o.id = %s' if include_related else 'sc."organizationId" = %s')
                     params.append(organization_id)
                 if site_id:
                     where_clauses.append('sc."siteId" = %s')
                     params.append(site_id)
-                if status:
-                    where_clauses.append('sc.status = %s')
-                    params.append(status)
+                if survey_id:
+                    where_clauses.append('sc."surveyId" = %s')
+                    params.append(survey_id)
                 if date_from:
                     where_clauses.append('sc."createdAt" >= %s')
                     params.append(date_from)
                 if date_to:
                     where_clauses.append('sc."createdAt" <= %s')
                     params.append(date_to)
+                
                 where_clause = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
                 query = f"{base_query} {where_clause} ORDER BY sc.\"createdAt\" DESC LIMIT %s"
                 params.append(limit)
-                results_data['safety_climbs'] = db.execute_query(query, tuple(params))
+                
+                results_data['safety_climb'] = db.execute_query(query, tuple(params))
+            
             # Query deficiencies
-            if data_type in ["deficiencies", "both"]:
+            elif data_type == "deficiency":
                 where_clauses = []
                 params = []
+                
                 if include_related:
                     base_query = """
                         SELECT
@@ -914,47 +939,52 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                             d.status,
                             d.description,
                             d."createdAt" as created_at,
-                            sc.id as safety_climb_id,
                             s.id as site_id,
                             s.name as site_name,
                             o.name as organization_name
-                        FROM deficencies d
-                        LEFT JOIN safety_climb sc ON d."safetyClimbId" = sc.id
-                        LEFT JOIN site s ON sc."siteId" = s.id
+                        FROM deficiency d
+                        LEFT JOIN survey s ON sc."surveyId" = s.id
                         LEFT JOIN organization o ON s."organizationId" = o.id
                     """
                 else:
-                    base_query = "SELECT * FROM deficencies d"
+                    base_query = "SELECT * FROM deficiency d"
+                
                 if organization_id:
-                    where_clauses.append('s."organizationId" = %s')
+                    where_clauses.append('o.id = %s' if include_related else 'd."organizationId" = %s')
                     params.append(organization_id)
                 if site_id:
-                    where_clauses.append('s.id = %s')
+                    where_clauses.append('s.id = %s' if include_related else 'd."siteId" = %s')
                     params.append(site_id)
-                if safety_climb_id:
-                    where_clauses.append('d."safetyClimbId" = %s')
-                    params.append(safety_climb_id)
                 if severity:
                     where_clauses.append('d.severity = %s')
                     params.append(severity)
-                if status:
-                    where_clauses.append('d.status = %s')
-                    params.append(status)
+                if survey_id:
+                    where_clauses.append('sc."surveyId" = %s')
+                    params.append(survey_id)
                 if date_from:
                     where_clauses.append('d."createdAt" >= %s')
                     params.append(date_from)
                 if date_to:
                     where_clauses.append('d."createdAt" <= %s')
                     params.append(date_to)
+                
                 where_clause = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
                 query = f"{base_query} {where_clause} ORDER BY d.\"createdAt\" DESC LIMIT %s"
                 params.append(limit)
-                results_data['deficiencies'] = db.execute_query(query, tuple(params))
+                
+                results_data['deficiency'] = db.execute_query(query, tuple(params))
+            
+            # Query other data types (appurtenance, antenna_equipment, etc.)
+            elif data_type in ["appurtenance", "antenna_equipment", "guy_attachment", "guy_wire", "generator", "fuel_tank"]:
+                # TODO: Implement queries for these data types
+                return [TextContent(type="text", text=f"Query for {data_type} is not yet implemented.")]
+            
             # Format response
             response = f"Inspection Data Query Results\n"
             response += f"{'='*60}\n\n"
-            if 'safety_climbs' in results_data:
-                sc_results = results_data['safety_climbs']
+            
+            if 'safety_climb' in results_data:
+                sc_results = results_data['safety_climb']
                 response += f"SAFETY CLIMBS: {len(sc_results)} records\n"
                 response += f"{'-'*40}\n"
                 if sc_results:
@@ -964,8 +994,9 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 else:
                     response += "No safety climb records found.\n"
                 response += "\n\n"
-            if 'deficiencies' in results_data:
-                def_results = results_data['deficiencies']
+            
+            if 'deficiency' in results_data:
+                def_results = results_data['deficiency']
                 response += f"DEFICIENCIES: {len(def_results)} records\n"
                 response += f"{'-'*40}\n"
                 if def_results:
@@ -974,6 +1005,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                         response += f"\n... and {len(def_results) - 10} more records\n"
                 else:
                     response += "No deficiency records found.\n"
+            
             return [TextContent(type="text", text=response)]
 
         elif name == "get_weather_for_site":
@@ -1183,7 +1215,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             logger.info(f">>> Found {len(results)} structures needing inspection")
             
             # Format response
-            response = f"🔍 TOWER INSPECTION COMPLIANCE REPORT\n"
+            response = f"TOWER INSPECTION COMPLIANCE REPORT\n"
             response += f"{'='*80}\n\n"
             response += f"Inspection Requirements by Tower Type:\n"
             response += f"  • Guyed Towers: Inspection required every 3 years\n"
@@ -1194,7 +1226,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             response += f"Total towers found: {len(results)}\n\n"
             
             if not results:
-                response += "✅ All towers are compliant with inspection schedules!\n"
+                response += "All towers are compliant with inspection schedules!\n"
                 return [TextContent(type="text", text=response)]
             
             # Categorize by priority and tower type
@@ -1214,7 +1246,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             # Never inspected towers (CRITICAL)
             if never_inspected:
-                response += f"🔴 CRITICAL PRIORITY - NEVER INSPECTED ({len(never_inspected)} towers):\n"
+                response += f"CRITICAL PRIORITY - NEVER INSPECTED ({len(never_inspected)} towers):\n"
                 response += f"{'-'*80}\n"
                 
                 guyed, monopole, self_support, other = group_by_type(never_inspected)
@@ -1252,7 +1284,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             # 10+ years overdue (CRITICAL)
             if critical_10plus:
-                response += f"\n🔴 CRITICAL - 10+ YEARS OVERDUE ({len(critical_10plus)} towers):\n"
+                response += f"\nCRITICAL - 10+ YEARS OVERDUE ({len(critical_10plus)} towers):\n"
                 response += f"{'-'*80}\n"
                 for i, tower in enumerate(critical_10plus[:15], 1):
                     response += f"{i}. {tower['structure_name'] or tower['site_name']}\n"
@@ -1265,7 +1297,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             # 7-10 years overdue (HIGH)
             if high_7plus:
-                response += f"\n⚠️  HIGH PRIORITY - 7-10 YEARS OVERDUE ({len(high_7plus)} towers):\n"
+                response += f"\n⚠️HIGH PRIORITY - 7-10 YEARS OVERDUE ({len(high_7plus)} towers):\n"
                 response += f"{'-'*80}\n"
                 for i, tower in enumerate(high_7plus[:10], 1):
                     response += f"{i}. {tower['structure_name'] or tower['site_name']}\n"
@@ -1275,7 +1307,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             # 5-7 years overdue (HIGH)
             if high_5plus:
-                response += f"\n⚠️  HIGH PRIORITY - 5-7 YEARS OVERDUE ({len(high_5plus)} towers):\n"
+                response += f"\n⚠️HIGH PRIORITY - 5-7 YEARS OVERDUE ({len(high_5plus)} towers):\n"
                 response += f"{'-'*80}\n"
                 for i, tower in enumerate(high_5plus[:10], 1):
                     response += f"{i}. {tower['structure_name'] or tower['site_name']}\n"
@@ -1285,7 +1317,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             # 3-5 years overdue (MEDIUM)
             if medium_overdue:
-                response += f"\n⚠️  MEDIUM PRIORITY - 3-5 YEARS OVERDUE ({len(medium_overdue)} towers):\n"
+                response += f"\nMEDIUM PRIORITY - 3-5 YEARS OVERDUE ({len(medium_overdue)} towers):\n"
                 response += f"{'-'*80}\n"
                 guyed_medium = [t for t in medium_overdue if t['tower_category'] == 'Guyed']
                 if guyed_medium:
@@ -1298,7 +1330,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             # Summary statistics
             response += f"\n{'='*80}\n"
-            response += f"📊 SUMMARY BY TOWER TYPE:\n"
+            response += f"SUMMARY BY TOWER TYPE:\n"
             response += f"{'='*80}\n"
             
             all_guyed = [r for r in results if r['tower_category'] == 'Guyed']
@@ -1325,13 +1357,13 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             response += f"\n{'='*80}\n"
             response += f"OVERALL SUMMARY:\n"
             response += f"{'='*80}\n"
-            response += f"  🔴 Never inspected:              {len(never_inspected):>6} towers\n"
-            response += f"  🔴 Critically overdue (10+ yrs): {len(critical_10plus):>6} towers\n"
-            response += f"  ⚠️  High priority (7-10 yrs):     {len(high_7plus):>6} towers\n"
-            response += f"  ⚠️  High priority (5-7 yrs):      {len(high_5plus):>6} towers\n"
-            response += f"  ⚠️  Medium priority (3-5 yrs):    {len(medium_overdue):>6} towers\n"
+            response += f"  Never inspected:              {len(never_inspected):>6} towers\n"
+            response += f"  Critically overdue (10+ yrs): {len(critical_10plus):>6} towers\n"
+            response += f"  High priority (7-10 yrs):     {len(high_7plus):>6} towers\n"
+            response += f"  High priority (5-7 yrs):      {len(high_5plus):>6} towers\n"
+            response += f"  Medium priority (3-5 yrs):    {len(medium_overdue):>6} towers\n"
             response += f"  {'─'*80}\n"
-            response += f"  📋 TOTAL NEEDING INSPECTION:     {len(results):>6} towers\n"
+            response += f"  TOTAL NEEDING INSPECTION:     {len(results):>6} towers\n"
             response += f"{'='*80}\n"
             
             return [TextContent(type="text", text=response)]

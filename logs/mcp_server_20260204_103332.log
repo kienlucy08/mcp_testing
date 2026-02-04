@@ -1,0 +1,797 @@
+2026-02-04 10:33:32,516 - INFO - __main__ - Environment loaded
+2026-02-04 10:33:32,517 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-04 10:33:32,517 - INFO - __main__ -   User: postgres
+2026-02-04 10:33:32,531 - INFO - __main__ - ============================================================
+2026-02-04 10:33:32,531 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-04 10:33:32,532 - INFO - __main__ - ============================================================
+2026-02-04 10:33:32,532 - INFO - __main__ - Database Type: postgres
+2026-02-04 10:33:32,536 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-04 10:33:32,536 - INFO - __main__ - Database Name: postgres
+2026-02-04 10:33:32,537 - INFO - __main__ - Database User: postgres
+2026-02-04 10:33:32,537 - INFO - __main__ - Testing database connection...
+2026-02-04 10:33:32,983 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-04 10:33:32,984 - INFO - __main__ - Caching database schema...
+2026-02-04 10:34:58,817 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-04 10:34:58,818 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-04 10:34:58,839 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-04 10:35:07,748 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:08,157 - ERROR - __main__ - Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+2026-02-04 10:35:08,157 - ERROR - __main__ - Error in query_inspection_data: Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 264, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 975, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+2026-02-04 10:35:10,276 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:11,971 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:13,957 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:16,103 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:17,991 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:19,393 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:25,453 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:25,455 - INFO - __main__ - Executing query: Find all deficiencies related to safety climbs by searching for safety climb keywords in various deficiency fields
+2026-02-04 10:35:25,456 - INFO - __main__ - SQL: SELECT 
+    d.id,
+    d.name,
+    d.deficiencyCode,
+    d.deficiencyLocation,
+    d.description,
+    d.severity,
+    d.elevation,
+    d.supportingDetail,
+    d.notes,
+    d.wholeTowerAffected,
+    sv.siteName,
+    sv.siteIdentifier,
+    sv.siteAddress,
+    s.name as survey_name,
+    s.siteVisitDate,
+    o.name as organization_name
+FROM deficiency d
+LEFT JOIN survey s ON d.surveyId = s.id
+LEFT JOIN site_visit sv ON s.siteVisitId = sv.id
+LEFT JOIN organization o ON d.organizationId = o.id
+WHERE 
+    LOWER(d.name) LIKE '%safety%climb%' OR
+    LOWER(d.description) LIKE '%safety%climb%' OR
+    LOWER(d.deficiencyLocation) LIKE '%safety%climb%' OR
+    LOWER(d.supportingDetail) LIKE '%safety%climb%' OR
+    LOWER(d.notes) LIKE '%safety%climb%'
+ORDER BY d.createdAt DESC
+2026-02-04 10:35:25,456 - INFO - __main__ - Params: ()
+2026-02-04 10:35:25,894 - ERROR - __main__ - Database error: column d.surveyid does not exist
+LINE 19: LEFT JOIN survey s ON d.surveyId = s.id
+                               ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+2026-02-04 10:35:25,895 - ERROR - __main__ - Error in execute_query: Database error: column d.surveyid does not exist
+LINE 19: LEFT JOIN survey s ON d.surveyId = s.id
+                               ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 266, in execute_query
+    cursor.execute(query)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column d.surveyid does not exist
+LINE 19: LEFT JOIN survey s ON d.surveyId = s.id
+                               ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column d.surveyid does not exist
+LINE 19: LEFT JOIN survey s ON d.surveyId = s.id
+                               ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+2026-02-04 10:35:30,323 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:30,329 - INFO - __main__ - Executing query: Find all deficiencies related to safety climbs by searching for safety climb keywords in various deficiency fields
+2026-02-04 10:35:30,330 - INFO - __main__ - SQL: SELECT 
+    d.id,
+    d.name,
+    d."deficiencyCode",
+    d."deficiencyLocation",
+    d.description,
+    d.severity,
+    d.elevation,
+    d."supportingDetail",
+    d.notes,
+    d."wholeTowerAffected",
+    sv."siteName",
+    sv."siteIdentifier",
+    sv."siteAddress",
+    s.name as survey_name,
+    s."siteVisitDate",
+    o.name as organization_name
+FROM deficiency d
+LEFT JOIN survey s ON d."surveyId" = s.id
+LEFT JOIN site_visit sv ON s."siteVisitId" = sv.id
+LEFT JOIN organization o ON d."organizationId" = o.id
+WHERE 
+    LOWER(d.name) LIKE '%safety%climb%' OR
+    LOWER(d.description) LIKE '%safety%climb%' OR
+    LOWER(d."deficiencyLocation") LIKE '%safety%climb%' OR
+    LOWER(d."supportingDetail") LIKE '%safety%climb%' OR
+    LOWER(d.notes) LIKE '%safety%climb%'
+ORDER BY d."createdAt" DESC
+2026-02-04 10:35:30,331 - INFO - __main__ - Params: ()
+2026-02-04 10:35:33,352 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:33,779 - ERROR - __main__ - Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+2026-02-04 10:35:33,779 - ERROR - __main__ - Error in query_inspection_data: Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 264, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 975, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+2026-02-04 10:35:38,489 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:38,494 - INFO - __main__ - Executing query: Get summary statistics of safety climb deficiencies by severity
+2026-02-04 10:35:38,495 - INFO - __main__ - SQL: SELECT 
+    COUNT(*) as total_deficiencies,
+    COUNT(DISTINCT sv."siteName") as unique_towers,
+    COUNT(DISTINCT sv."siteIdentifier") as unique_site_identifiers,
+    COUNT(DISTINCT o.name) as organizations_affected,
+    d.severity,
+    COUNT(*) as count_by_severity
+FROM deficiency d
+LEFT JOIN survey s ON d."surveyId" = s.id
+LEFT JOIN site_visit sv ON s."siteVisitId" = sv.id
+LEFT JOIN organization o ON d."organizationId" = o.id
+WHERE 
+    LOWER(d.name) LIKE '%safety%climb%' OR
+    LOWER(d.description) LIKE '%safety%climb%' OR
+    LOWER(d."deficiencyLocation") LIKE '%safety%climb%' OR
+    LOWER(d."supportingDetail") LIKE '%safety%climb%' OR
+    LOWER(d.notes) LIKE '%safety%climb%'
+GROUP BY d.severity
+ORDER BY d.severity
+2026-02-04 10:35:38,495 - INFO - __main__ - Params: ()
+2026-02-04 10:35:44,609 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:35:44,613 - INFO - __main__ - Executing query: Get distinct towers with safety climb deficiencies, including summary statistics
+2026-02-04 10:35:44,614 - INFO - __main__ - SQL: SELECT DISTINCT
+    sv."siteName",
+    sv."siteIdentifier", 
+    sv."siteAddress",
+    o.name as organization_name,
+    COUNT(d.id) as deficiency_count,
+    MIN(d.severity) as worst_severity,
+    string_agg(DISTINCT d.severity, ', ' ORDER BY d.severity) as all_severities,
+    string_agg(DISTINCT d."deficiencyCode", ', ') as deficiency_codes
+FROM deficiency d
+LEFT JOIN survey s ON d."surveyId" = s.id
+LEFT JOIN site_visit sv ON s."siteVisitId" = sv.id
+LEFT JOIN organization o ON d."organizationId" = o.id
+WHERE 
+    LOWER(d.name) LIKE '%safety%climb%' OR
+    LOWER(d.description) LIKE '%safety%climb%' OR
+    LOWER(d."deficiencyLocation") LIKE '%safety%climb%' OR
+    LOWER(d."supportingDetail") LIKE '%safety%climb%' OR
+    LOWER(d.notes) LIKE '%safety%climb%'
+GROUP BY sv."siteName", sv."siteIdentifier", sv."siteAddress", o.name
+ORDER BY worst_severity ASC, deficiency_count DESC
+2026-02-04 10:35:44,614 - INFO - __main__ - Params: ()
+2026-02-04 10:36:44,036 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:36:46,195 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:36:47,991 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:36:50,051 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:36:52,526 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:36:52,528 - INFO - __main__ - Executing query: Find the FieldSync organization ID
+2026-02-04 10:36:52,528 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name ILIKE '%fieldsync%'
+2026-02-04 10:36:52,528 - INFO - __main__ - Params: ()
+2026-02-04 10:36:56,751 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:36:56,755 - INFO - __main__ - Executing query: Get the top 10 tallest structures in the FieldSync organization
+2026-02-04 10:36:56,756 - INFO - __main__ - SQL: SELECT 
+    name,
+    constructedHeight,
+    type,
+    owner,
+    ownerStructureId,
+    apexHeight,
+    elevation,
+    fccAsrNumber
+FROM structure 
+WHERE organizationId = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    AND constructedHeight IS NOT NULL
+ORDER BY constructedHeight DESC
+LIMIT 10
+2026-02-04 10:36:56,756 - INFO - __main__ - Params: ()
+2026-02-04 10:36:57,237 - ERROR - __main__ - Database error: column "constructedheight" does not exist
+LINE 3:     constructedHeight,
+            ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+
+2026-02-04 10:36:57,238 - ERROR - __main__ - Error in execute_query: Database error: column "constructedheight" does not exist
+LINE 3:     constructedHeight,
+            ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 266, in execute_query
+    cursor.execute(query)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "constructedheight" does not exist
+LINE 3:     constructedHeight,
+            ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column "constructedheight" does not exist
+LINE 3:     constructedHeight,
+            ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+
+2026-02-04 10:37:00,284 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:37:00,291 - INFO - __main__ - Executing query: Get the top 10 tallest structures in the FieldSync organization
+2026-02-04 10:37:00,292 - INFO - __main__ - SQL: SELECT 
+    name,
+    "constructedHeight",
+    type,
+    owner,
+    "ownerStructureId",
+    "apexHeight",
+    elevation,
+    "fccAsrNumber"
+FROM structure 
+WHERE "organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+    AND "constructedHeight" IS NOT NULL
+ORDER BY "constructedHeight" DESC
+LIMIT 10
+2026-02-04 10:37:00,293 - INFO - __main__ - Params: ()
+2026-02-04 10:44:38,879 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:44:38,886 - INFO - __main__ - >>> Fetching site data for 1a7fbff1-5b9d-4c6d-9984-11f31811ec12
+2026-02-04 10:44:39,370 - INFO - __main__ - >>> Query returned 1 results
+2026-02-04 10:44:39,371 - INFO - __main__ - >>> Extracted coordinates: lat=31.14960034, lon=-90.46510662
+2026-02-04 10:44:39,371 - INFO - __main__ - >>> CALLING WEATHER API for 31.14960034, -90.46510662
+2026-02-04 10:44:40,331 - INFO - __main__ - >>> Weather API returned: ['current', 'forecast', 'success']
+2026-02-04 10:44:40,331 - INFO - __main__ - >>> Weather success: True
+2026-02-04 10:44:40,332 - INFO - __main__ - >>> Formatting weather data...
+2026-02-04 10:44:40,341 - INFO - __main__ - >>> Adding extreme weather check...
+2026-02-04 10:44:40,342 - INFO - __main__ - >>> WEATHER TOOL COMPLETE - returning 1012 chars
+2026-02-04 10:45:37,251 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:39,895 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:41,746 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:43,892 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:47,357 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:47,359 - INFO - __main__ - Executing query: Get location information for the specified site
+2026-02-04 10:45:47,359 - INFO - __main__ - SQL: SELECT id, name, location, address FROM site WHERE id = %s
+2026-02-04 10:45:47,360 - INFO - __main__ - Params: ('7b9dbd13-92b9-4aca-b38e-ade56097ecbf',)
+2026-02-04 10:45:51,457 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:51,459 - INFO - __main__ - Executing query: Extract latitude and longitude coordinates for the reference site
+2026-02-04 10:45:51,459 - INFO - __main__ - SQL: SELECT 
+    ST_X(location) as longitude, 
+    ST_Y(location) as latitude
+FROM site 
+WHERE id = %s
+2026-02-04 10:45:51,459 - INFO - __main__ - Params: ('7b9dbd13-92b9-4aca-b38e-ade56097ecbf',)
+2026-02-04 10:45:58,085 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:45:58,088 - INFO - __main__ - Executing query: Find all sites within 50 miles of the specified site, ordered by distance
+2026-02-04 10:45:58,088 - INFO - __main__ - SQL: SELECT 
+    s.id,
+    s.name,
+    s.address,
+    ST_X(s.location) as longitude,
+    ST_Y(s.location) as latitude,
+    ROUND(ST_Distance(
+        ST_Transform(s.location, 3857),
+        ST_Transform((SELECT location FROM site WHERE id = %s), 3857)
+    ) * 3.28084 / 5280, 2) as distance_miles
+FROM site s
+WHERE s.location IS NOT NULL
+    AND ST_DWithin(
+        ST_Transform(s.location, 3857),
+        ST_Transform((SELECT location FROM site WHERE id = %s), 3857),
+        80467
+    )
+ORDER BY ST_Distance(
+    ST_Transform(s.location, 3857),
+    ST_Transform((SELECT location FROM site WHERE id = %s), 3857)
+)
+2026-02-04 10:45:58,088 - INFO - __main__ - Params: ('7b9dbd13-92b9-4aca-b38e-ade56097ecbf', '7b9dbd13-92b9-4aca-b38e-ade56097ecbf', '7b9dbd13-92b9-4aca-b38e-ade56097ecbf')
+2026-02-04 10:45:58,543 - ERROR - __main__ - Database error: function round(double precision, integer) does not exist
+LINE 7:     ROUND(ST_Distance(
+            ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+2026-02-04 10:45:58,544 - ERROR - __main__ - Error in execute_query: Database error: function round(double precision, integer) does not exist
+LINE 7:     ROUND(ST_Distance(
+            ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 264, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedFunction: function round(double precision, integer) does not exist
+LINE 7:     ROUND(ST_Distance(
+            ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: function round(double precision, integer) does not exist
+LINE 7:     ROUND(ST_Distance(
+            ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+2026-02-04 10:46:03,131 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:46:03,133 - INFO - __main__ - Executing query: Find all sites within 50 miles of the specified site, ordered by distance
+2026-02-04 10:46:03,133 - INFO - __main__ - SQL: SELECT 
+    s.id,
+    s.name,
+    s.address,
+    ST_X(s.location) as longitude,
+    ST_Y(s.location) as latitude,
+    (ST_Distance(
+        ST_Transform(s.location, 3857),
+        ST_Transform((SELECT location FROM site WHERE id = %s), 3857)
+    ) * 3.28084 / 5280)::numeric(10,2) as distance_miles
+FROM site s
+WHERE s.location IS NOT NULL
+    AND ST_DWithin(
+        ST_Transform(s.location, 3857),
+        ST_Transform((SELECT location FROM site WHERE id = %s), 3857),
+        80467
+    )
+ORDER BY ST_Distance(
+    ST_Transform(s.location, 3857),
+    ST_Transform((SELECT location FROM site WHERE id = %s), 3857)
+)
+2026-02-04 10:46:03,133 - INFO - __main__ - Params: ('7b9dbd13-92b9-4aca-b38e-ade56097ecbf', '7b9dbd13-92b9-4aca-b38e-ade56097ecbf', '7b9dbd13-92b9-4aca-b38e-ade56097ecbf')
+2026-02-04 10:46:07,961 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:46:07,963 - INFO - __main__ - Executing query: Get overview of all sites with location data
+2026-02-04 10:46:07,963 - INFO - __main__ - SQL: SELECT 
+    COUNT(*) as total_sites_with_location,
+    MIN(ST_X(location)) as min_longitude,
+    MAX(ST_X(location)) as max_longitude,
+    MIN(ST_Y(location)) as min_latitude,
+    MAX(ST_Y(location)) as max_latitude
+FROM site 
+WHERE location IS NOT NULL
+2026-02-04 10:46:07,963 - INFO - __main__ - Params: ()
+2026-02-04 10:46:11,825 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:46:11,827 - INFO - __main__ - Executing query: Get sample of other sites with location data
+2026-02-04 10:46:11,827 - INFO - __main__ - SQL: SELECT 
+    id,
+    name,
+    address,
+    ST_X(location) as longitude,
+    ST_Y(location) as latitude
+FROM site 
+WHERE location IS NOT NULL 
+    AND id != %s
+LIMIT 10
+2026-02-04 10:46:11,827 - INFO - __main__ - Params: ('7b9dbd13-92b9-4aca-b38e-ade56097ecbf',)
+2026-02-04 10:46:18,659 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:46:18,661 - INFO - __main__ - Executing query: Find sites within 50 miles using geography distance calculation
+2026-02-04 10:46:18,661 - INFO - __main__ - SQL: SELECT 
+    s.id,
+    s.name,
+    s.address,
+    ST_X(s.location) as longitude,
+    ST_Y(s.location) as latitude,
+    ST_Distance(s.location::geography, (SELECT location::geography FROM site WHERE id = %s)) / 1609.34 as distance_miles
+FROM site s
+WHERE s.location IS NOT NULL
+    AND ST_Distance(s.location::geography, (SELECT location::geography FROM site WHERE id = %s)) <= 80467
+ORDER BY ST_Distance(s.location::geography, (SELECT location::geography FROM site WHERE id = %s))
+2026-02-04 10:46:18,661 - INFO - __main__ - Params: ('7b9dbd13-92b9-4aca-b38e-ade56097ecbf', '7b9dbd13-92b9-4aca-b38e-ade56097ecbf', '7b9dbd13-92b9-4aca-b38e-ade56097ecbf')
+2026-02-04 10:46:24,516 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:46:24,518 - INFO - __main__ - Executing query: Find sites within 50 miles of actual Lakewood, CO coordinates
+2026-02-04 10:46:24,518 - INFO - __main__ - SQL: SELECT 
+    s.id,
+    s.name,
+    s.address,
+    ST_X(s.location) as longitude,
+    ST_Y(s.location) as latitude,
+    ST_Distance(
+        ST_MakePoint(-105.08, 39.71)::geography,
+        s.location::geography
+    ) / 1609.34 as distance_from_lakewood_miles
+FROM site s
+WHERE s.location IS NOT NULL
+    AND ST_Distance(
+        ST_MakePoint(-105.08, 39.71)::geography,
+        s.location::geography
+    ) <= 80467
+ORDER BY ST_Distance(
+    ST_MakePoint(-105.08, 39.71)::geography,
+    s.location::geography
+)
+LIMIT 20
+2026-02-04 10:46:24,518 - INFO - __main__ - Params: ()
+2026-02-04 10:47:18,838 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:18,840 - INFO - __main__ - >>> Finding sites needing inspection based on tower type
+2026-02-04 10:47:18,840 - INFO - __main__ - >>> Guyed tower cutoff: 2023-02-05 (3 years)
+2026-02-04 10:47:18,841 - INFO - __main__ - >>> Monopole/Self-support cutoff: 2021-02-04 (5 years)
+2026-02-04 10:47:18,841 - INFO - __main__ - >>> Executing query...
+2026-02-04 10:47:19,326 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:47:19,326 - ERROR - __main__ - Error in get_sites_needing_inspection: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 264, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1214, in call_tool
+    results = db.execute_query(query, tuple(params))
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:47:21,666 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:23,217 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:24,817 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:26,438 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:27,854 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:38,395 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:38,400 - INFO - __main__ - Executing query: Find towers that need TIA inspection checkups based on tower type requirements (guyed: 3 years, monopole/self-support: 5 years)
+2026-02-04 10:47:38,400 - INFO - __main__ - SQL: WITH latest_visits AS (
+    SELECT 
+        s.id as site_id,
+        s.name as site_name,
+        s.address,
+        st.id as structure_id,
+        st.name as structure_name,
+        st.type as structure_type,
+        st.owner,
+        MAX(sv.siteVisitDate) as last_visit_date,
+        CASE 
+            WHEN LOWER(st.type) LIKE '%guyed%' THEN 3
+            WHEN LOWER(st.type) LIKE '%monopole%' OR LOWER(st.type) LIKE '%self%support%' THEN 5
+            ELSE 5  -- Default to 5 years for unknown types
+        END as inspection_interval_years
+    FROM site s
+    LEFT JOIN structure st ON s.id = st.siteId
+    LEFT JOIN site_visit sv ON s.id = sv.siteId
+    WHERE st.id IS NOT NULL
+    GROUP BY s.id, s.name, s.address, st.id, st.name, st.type, st.owner
+),
+overdue_sites AS (
+    SELECT 
+        *,
+        CASE 
+            WHEN last_visit_date IS NULL THEN 'Never inspected'
+            ELSE EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_visit_date::date))::text || ' years ago'
+        END as time_since_last_visit,
+        CASE 
+            WHEN last_visit_date IS NULL THEN true
+            WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_visit_date::date)) >= inspection_interval_years THEN true
+            ELSE false
+        END as needs_inspection
+    FROM latest_visits
+)
+SELECT 
+    site_name,
+    structure_name,
+    structure_type,
+    owner,
+    address,
+    time_since_last_visit,
+    inspection_interval_years || ' year requirement' as inspection_requirement,
+    CASE 
+        WHEN last_visit_date IS NULL THEN 'URGENT - Never inspected'
+        ELSE 'OVERDUE - Last visit: ' || last_visit_date::date::text
+    END as status
+FROM overdue_sites
+WHERE needs_inspection = true
+ORDER BY 
+    CASE WHEN last_visit_date IS NULL THEN 0 ELSE 1 END,  -- Never inspected first
+    last_visit_date ASC NULLS FIRST
+2026-02-04 10:47:38,401 - INFO - __main__ - Params: ()
+2026-02-04 10:47:38,824 - ERROR - __main__ - Database error: column st.siteid does not exist
+LINE 17:     LEFT JOIN structure st ON s.id = st.siteId
+                                              ^
+HINT:  Perhaps you meant to reference the column "st.siteId".
+
+2026-02-04 10:47:38,824 - ERROR - __main__ - Error in execute_query: Database error: column st.siteid does not exist
+LINE 17:     LEFT JOIN structure st ON s.id = st.siteId
+                                              ^
+HINT:  Perhaps you meant to reference the column "st.siteId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 266, in execute_query
+    cursor.execute(query)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column st.siteid does not exist
+LINE 17:     LEFT JOIN structure st ON s.id = st.siteId
+                                              ^
+HINT:  Perhaps you meant to reference the column "st.siteId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column st.siteid does not exist
+LINE 17:     LEFT JOIN structure st ON s.id = st.siteId
+                                              ^
+HINT:  Perhaps you meant to reference the column "st.siteId".
+
+2026-02-04 10:47:45,481 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:47:45,483 - INFO - __main__ - Executing query: Find towers that need TIA inspection checkups based on tower type requirements (guyed: 3 years, monopole/self-support: 5 years)
+2026-02-04 10:47:45,483 - INFO - __main__ - SQL: WITH latest_visits AS (
+    SELECT 
+        s.id as site_id,
+        s.name as site_name,
+        s.address,
+        st.id as structure_id,
+        st.name as structure_name,
+        st.type as structure_type,
+        st.owner,
+        MAX(sv."siteVisitDate") as last_visit_date,
+        CASE 
+            WHEN LOWER(st.type) LIKE '%guyed%' THEN 3
+            WHEN LOWER(st.type) LIKE '%monopole%' OR LOWER(st.type) LIKE '%self%support%' THEN 5
+            ELSE 5  -- Default to 5 years for unknown types
+        END as inspection_interval_years
+    FROM site s
+    LEFT JOIN structure st ON s.id = st."siteId"
+    LEFT JOIN site_visit sv ON s.id = sv."siteId"
+    WHERE st.id IS NOT NULL
+    GROUP BY s.id, s.name, s.address, st.id, st.name, st.type, st.owner
+),
+overdue_sites AS (
+    SELECT 
+        *,
+        CASE 
+            WHEN last_visit_date IS NULL THEN 'Never inspected'
+            ELSE EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_visit_date::date))::text || ' years ago'
+        END as time_since_last_visit,
+        CASE 
+            WHEN last_visit_date IS NULL THEN true
+            WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, last_visit_date::date)) >= inspection_interval_years THEN true
+            ELSE false
+        END as needs_inspection
+    FROM latest_visits
+)
+SELECT 
+    site_name,
+    structure_name,
+    structure_type,
+    owner,
+    address,
+    time_since_last_visit,
+    inspection_interval_years || ' year requirement' as inspection_requirement,
+    CASE 
+        WHEN last_visit_date IS NULL THEN 'URGENT - Never inspected'
+        ELSE 'OVERDUE - Last visit: ' || last_visit_date::date::text
+    END as status
+FROM overdue_sites
+WHERE needs_inspection = true
+ORDER BY 
+    CASE WHEN last_visit_date IS NULL THEN 0 ELSE 1 END,  -- Never inspected first
+    last_visit_date ASC NULLS FIRST
+2026-02-04 10:47:45,483 - INFO - __main__ - Params: ()
+2026-02-04 10:49:02,999 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:04,698 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:06,126 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:07,780 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:09,638 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:12,697 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:12,700 - INFO - __main__ - Executing query: Get distinct tower/structure types available in the database
+2026-02-04 10:49:12,700 - INFO - __main__ - SQL: SELECT DISTINCT type FROM structure WHERE type IS NOT NULL ORDER BY type
+2026-02-04 10:49:12,700 - INFO - __main__ - Params: ()
+2026-02-04 10:49:15,841 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:16,253 - ERROR - __main__ - Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+2026-02-04 10:49:16,254 - ERROR - __main__ - Error in query_inspection_data: Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 264, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 975, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: missing FROM-clause entry for table "sc"
+LINE 12:                         LEFT JOIN survey s ON sc."surveyId" ...
+                                                       ^
+
+2026-02-04 10:49:20,471 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:20,475 - INFO - __main__ - Executing query: Calculate deficiency rates by tower type (monopole, guyed, self-support)
+2026-02-04 10:49:20,476 - INFO - __main__ - SQL: SELECT 
+    s.type as tower_type,
+    COUNT(d.id) as deficiency_count,
+    COUNT(DISTINCT s.id) as structure_count,
+    ROUND(COUNT(d.id)::numeric / COUNT(DISTINCT s.id), 2) as deficiencies_per_structure,
+    ROUND(COUNT(d.id)::numeric / COUNT(DISTINCT s.id) * 100, 1) as deficiency_rate_percent
+FROM structure s
+LEFT JOIN deficiency d ON d."structureId" = s.id
+WHERE s.type IS NOT NULL
+GROUP BY s.type
+ORDER BY deficiencies_per_structure DESC
+2026-02-04 10:49:20,476 - INFO - __main__ - Params: ()
+2026-02-04 10:49:20,890 - ERROR - __main__ - Database error: column d.structureId does not exist
+LINE 8: LEFT JOIN deficiency d ON d."structureId" = s.id
+                                  ^
+
+2026-02-04 10:49:20,891 - ERROR - __main__ - Error in execute_query: Database error: column d.structureId does not exist
+LINE 8: LEFT JOIN deficiency d ON d."structureId" = s.id
+                                  ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 266, in execute_query
+    cursor.execute(query)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column d.structureId does not exist
+LINE 8: LEFT JOIN deficiency d ON d."structureId" = s.id
+                                  ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 278, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column d.structureId does not exist
+LINE 8: LEFT JOIN deficiency d ON d."structureId" = s.id
+                                  ^
+
+2026-02-04 10:49:23,010 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:25,276 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:27,438 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:29,643 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:34,736 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:34,738 - INFO - __main__ - Executing query: Check if structure table has a site relationship
+2026-02-04 10:49:34,738 - INFO - __main__ - SQL: SELECT 
+    c.table_name, 
+    c.column_name, 
+    c.data_type,
+    tc.constraint_type,
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name
+FROM information_schema.columns c
+LEFT JOIN information_schema.key_column_usage kcu 
+    ON c.column_name = kcu.column_name AND c.table_name = kcu.table_name
+LEFT JOIN information_schema.table_constraints tc 
+    ON kcu.constraint_name = tc.constraint_name
+LEFT JOIN information_schema.constraint_column_usage ccu 
+    ON tc.constraint_name = ccu.constraint_name
+WHERE c.table_name = 'structure' 
+    AND c.column_name LIKE '%site%'
+ORDER BY c.column_name
+2026-02-04 10:49:34,738 - INFO - __main__ - Params: ()
+2026-02-04 10:49:40,923 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:40,931 - INFO - __main__ - Executing query: Calculate deficiency rates by tower type with proper joins through site relationships
+2026-02-04 10:49:40,932 - INFO - __main__ - SQL: WITH structure_deficiencies AS (
+    SELECT 
+        st.type as tower_type,
+        st.id as structure_id,
+        COUNT(d.id) as deficiency_count
+    FROM structure st
+    LEFT JOIN site s ON s.id = st."siteId"
+    LEFT JOIN site_visit sv ON sv."siteId" = s.id
+    LEFT JOIN survey su ON su."siteVisitId" = sv.id
+    LEFT JOIN deficiency d ON d."surveyId" = su.id
+    WHERE st.type IS NOT NULL
+    GROUP BY st.type, st.id
+)
+SELECT 
+    tower_type,
+    COUNT(*) as total_structures,
+    SUM(deficiency_count) as total_deficiencies,
+    ROUND(AVG(deficiency_count), 2) as avg_deficiencies_per_structure,
+    ROUND((SUM(deficiency_count)::numeric / COUNT(*)) * 100, 1) as deficiency_rate_percent
+FROM structure_deficiencies
+GROUP BY tower_type
+ORDER BY avg_deficiencies_per_structure DESC
+2026-02-04 10:49:40,933 - INFO - __main__ - Params: ()
+2026-02-04 10:49:45,883 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:49:45,885 - INFO - __main__ - Executing query: Get deficiency breakdown by severity for each tower type
+2026-02-04 10:49:45,885 - INFO - __main__ - SQL: SELECT 
+    st.type as tower_type,
+    d.severity,
+    COUNT(d.id) as deficiency_count,
+    ROUND((COUNT(d.id)::numeric / SUM(COUNT(d.id)) OVER (PARTITION BY st.type)) * 100, 1) as percentage_within_type
+FROM structure st
+LEFT JOIN site s ON s.id = st."siteId"
+LEFT JOIN site_visit sv ON sv."siteId" = s.id
+LEFT JOIN survey su ON su."siteVisitId" = sv.id
+LEFT JOIN deficiency d ON d."surveyId" = su.id
+WHERE st.type IS NOT NULL AND d.severity IS NOT NULL
+GROUP BY st.type, d.severity
+ORDER BY st.type, d.severity
+2026-02-04 10:49:45,885 - INFO - __main__ - Params: ()

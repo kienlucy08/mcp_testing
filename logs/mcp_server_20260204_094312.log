@@ -1,0 +1,16 @@
+2026-02-04 09:43:12,246 - INFO - __main__ - Environment loaded
+2026-02-04 09:43:12,246 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-04 09:43:12,246 - INFO - __main__ -   User: postgres
+2026-02-04 09:43:12,291 - INFO - __main__ - ============================================================
+2026-02-04 09:43:12,291 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-04 09:43:12,291 - INFO - __main__ - ============================================================
+2026-02-04 09:43:12,291 - INFO - __main__ - Database Type: postgres
+2026-02-04 09:43:12,292 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-04 09:43:12,292 - INFO - __main__ - Database Name: postgres
+2026-02-04 09:43:12,292 - INFO - __main__ - Database User: postgres
+2026-02-04 09:43:12,293 - INFO - __main__ - Testing database connection...
+2026-02-04 09:43:12,809 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-04 09:43:12,809 - INFO - __main__ - Caching database schema...
+2026-02-04 09:44:38,848 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-04 09:44:38,848 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-04 09:44:38,871 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest

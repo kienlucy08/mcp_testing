@@ -1,0 +1,847 @@
+2026-02-04 09:57:08,629 - INFO - __main__ - Environment loaded
+2026-02-04 09:57:08,629 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-04 09:57:08,629 - INFO - __main__ -   User: postgres
+2026-02-04 09:57:08,643 - INFO - __main__ - ============================================================
+2026-02-04 09:57:08,643 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-02-04 09:57:08,644 - INFO - __main__ - ============================================================
+2026-02-04 09:57:08,644 - INFO - __main__ - Database Type: postgres
+2026-02-04 09:57:08,646 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-02-04 09:57:08,646 - INFO - __main__ - Database Name: postgres
+2026-02-04 09:57:08,646 - INFO - __main__ - Database User: postgres
+2026-02-04 09:57:08,646 - INFO - __main__ - Testing database connection...
+2026-02-04 09:57:09,092 - INFO - __main__ - ✓ Successfully connected to database
+2026-02-04 09:57:09,092 - INFO - __main__ - Caching database schema...
+2026-02-04 09:58:39,216 - INFO - __main__ - ✓ Cached schema with 96 tables
+2026-02-04 09:58:39,216 - INFO - __main__ - Starting MCP server stdio interface...
+2026-02-04 09:58:39,231 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-02-04 09:58:57,549 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:58:57,551 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 09:58:59,298 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:01,095 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:01,099 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 09:59:03,133 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:05,564 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:05,567 - INFO - __main__ - Executing query: Search for tables with 'site' in their name
+2026-02-04 09:59:05,567 - INFO - __main__ - SQL: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name ILIKE '%site%'
+2026-02-04 09:59:05,568 - INFO - __main__ - Params: ()
+2026-02-04 09:59:05,902 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 09:59:05,902 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 09:59:07,664 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:10,545 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:10,552 - INFO - __main__ - Executing query: Find the FieldSync organization
+2026-02-04 09:59:10,553 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name ILIKE '%FieldSync%'
+2026-02-04 09:59:10,553 - INFO - __main__ - Params: ()
+2026-02-04 09:59:10,996 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 09:59:10,997 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 09:59:13,651 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:13,656 - INFO - __main__ - Executing query: Find the FieldSync organization by exact name
+2026-02-04 09:59:13,657 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name = 'FieldSync'
+2026-02-04 09:59:13,657 - INFO - __main__ - Params: ()
+2026-02-04 09:59:16,604 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:16,608 - INFO - __main__ - Executing query: Count the number of sites in the FieldSync organization
+2026-02-04 09:59:16,608 - INFO - __main__ - SQL: SELECT COUNT(*) as site_count FROM site WHERE organizationId = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+2026-02-04 09:59:16,609 - INFO - __main__ - Params: ()
+2026-02-04 09:59:17,069 - ERROR - __main__ - Database error: column "organizationid" does not exist
+LINE 1: SELECT COUNT(*) as site_count FROM site WHERE organizationId...
+                                                      ^
+HINT:  Perhaps you meant to reference the column "site.organizationId".
+
+2026-02-04 09:59:17,070 - ERROR - __main__ - Error in execute_query: Database error: column "organizationid" does not exist
+LINE 1: SELECT COUNT(*) as site_count FROM site WHERE organizationId...
+                                                      ^
+HINT:  Perhaps you meant to reference the column "site.organizationId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "organizationid" does not exist
+LINE 1: SELECT COUNT(*) as site_count FROM site WHERE organizationId...
+                                                      ^
+HINT:  Perhaps you meant to reference the column "site.organizationId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column "organizationid" does not exist
+LINE 1: SELECT COUNT(*) as site_count FROM site WHERE organizationId...
+                                                      ^
+HINT:  Perhaps you meant to reference the column "site.organizationId".
+
+2026-02-04 09:59:19,993 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 09:59:19,997 - INFO - __main__ - Executing query: Count the number of sites in the FieldSync organization
+2026-02-04 09:59:19,997 - INFO - __main__ - SQL: SELECT COUNT(*) as site_count FROM site WHERE "organizationId" = '06f64dce-6fde-4a49-bba8-ed9a22498516'
+2026-02-04 09:59:19,997 - INFO - __main__ - Params: ()
+2026-02-04 10:00:14,120 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:14,122 - INFO - __main__ - Executing query: Find FieldSync Organization ID
+2026-02-04 10:00:14,122 - INFO - __main__ - SQL: SELECT id, name FROM organizations WHERE name ILIKE '%FieldSync%'
+2026-02-04 10:00:14,122 - INFO - __main__ - Params: ()
+2026-02-04 10:00:14,478 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:00:14,478 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:00:16,026 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:16,027 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 10:00:18,075 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:21,230 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:23,973 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:23,975 - INFO - __main__ - Executing query: Find FieldSync Organization ID
+2026-02-04 10:00:23,975 - INFO - __main__ - SQL: SELECT id, name FROM organization WHERE name ILIKE '%FieldSync%'
+2026-02-04 10:00:23,975 - INFO - __main__ - Params: ()
+2026-02-04 10:00:24,308 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:00:24,308 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:00:26,886 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:26,887 - INFO - __main__ - Executing query: List first 20 organizations to see available data
+2026-02-04 10:00:26,888 - INFO - __main__ - SQL: SELECT id, name FROM organization LIMIT 20
+2026-02-04 10:00:26,888 - INFO - __main__ - Params: ()
+2026-02-04 10:00:30,882 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:31,320 - ERROR - __main__ - Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:00:31,321 - ERROR - __main__ - Error in query_inspection_data: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 981, in call_tool
+    results_data['deficiencies'] = db.execute_query(query, tuple(params))
+                                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:00:33,817 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:39,280 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:39,282 - INFO - __main__ - Executing query: Find most common deficiencies for FieldSync Organization
+2026-02-04 10:00:39,282 - INFO - __main__ - SQL: SELECT deficiencyCode, deficiencyLocation, description, severity, COUNT(*) as count 
+FROM deficiency 
+WHERE organizationId = %s 
+GROUP BY deficiencyCode, deficiencyLocation, description, severity 
+ORDER BY COUNT(*) DESC 
+LIMIT 20
+2026-02-04 10:00:39,282 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-02-04 10:00:39,692 - ERROR - __main__ - Database error: column "deficiencycode" does not exist
+LINE 1: SELECT deficiencyCode, deficiencyLocation, description, seve...
+               ^
+HINT:  Perhaps you meant to reference the column "deficiency.deficiencyCode".
+
+2026-02-04 10:00:39,692 - ERROR - __main__ - Error in execute_query: Database error: column "deficiencycode" does not exist
+LINE 1: SELECT deficiencyCode, deficiencyLocation, description, seve...
+               ^
+HINT:  Perhaps you meant to reference the column "deficiency.deficiencyCode".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "deficiencycode" does not exist
+LINE 1: SELECT deficiencyCode, deficiencyLocation, description, seve...
+               ^
+HINT:  Perhaps you meant to reference the column "deficiency.deficiencyCode".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column "deficiencycode" does not exist
+LINE 1: SELECT deficiencyCode, deficiencyLocation, description, seve...
+               ^
+HINT:  Perhaps you meant to reference the column "deficiency.deficiencyCode".
+
+2026-02-04 10:00:44,811 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:44,813 - INFO - __main__ - Executing query: Find most common deficiencies for FieldSync Organization using quoted column names
+2026-02-04 10:00:44,813 - INFO - __main__ - SQL: SELECT d."deficiencyCode", d."deficiencyLocation", d."description", d."severity", COUNT(*) as count 
+FROM deficiency d
+WHERE d."organizationId" = %s 
+GROUP BY d."deficiencyCode", d."deficiencyLocation", d."description", d."severity" 
+ORDER BY COUNT(*) DESC 
+LIMIT 20
+2026-02-04 10:00:44,814 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-02-04 10:00:49,718 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:49,723 - INFO - __main__ - Executing query: Get deficiency codes summary with severity breakdown for FieldSync Organization
+2026-02-04 10:00:49,723 - INFO - __main__ - SQL: SELECT d."deficiencyCode", COUNT(*) as total_count,
+       COUNT(CASE WHEN d."severity" = '1' THEN 1 END) as severity_1_count,
+       COUNT(CASE WHEN d."severity" = '2' THEN 1 END) as severity_2_count,
+       COUNT(CASE WHEN d."severity" = '3' THEN 1 END) as severity_3_count
+FROM deficiency d
+WHERE d."organizationId" = %s 
+GROUP BY d."deficiencyCode" 
+ORDER BY COUNT(*) DESC 
+LIMIT 15
+2026-02-04 10:00:49,724 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-02-04 10:00:54,115 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:00:54,117 - INFO - __main__ - Executing query: Get descriptions for the most common deficiency codes in FieldSync Organization
+2026-02-04 10:00:54,117 - INFO - __main__ - SQL: SELECT DISTINCT d."deficiencyCode", d."description" 
+FROM deficiency d
+WHERE d."organizationId" = %s 
+AND d."deficiencyCode" IN ('A1', 'B2', 'F1.a', 'ungrounded', 'A4', 'other0', 'I3.a', 'A0', 'D1', 'H2.d.vi')
+ORDER BY d."deficiencyCode"
+2026-02-04 10:00:54,117 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-02-04 10:01:46,294 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:01:46,296 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 10:01:49,518 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:01:51,459 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:01:55,272 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:01:55,274 - INFO - __main__ - Executing query: Get all distinct tower types to identify guyed tower classification
+2026-02-04 10:01:55,274 - INFO - __main__ - SQL: SELECT DISTINCT type FROM structure WHERE type IS NOT NULL ORDER BY type
+2026-02-04 10:01:55,274 - INFO - __main__ - Params: ()
+2026-02-04 10:01:58,502 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:01:58,507 - INFO - __main__ - Executing query: Calculate the average height of guyed towers across all organizations
+2026-02-04 10:01:58,508 - INFO - __main__ - SQL: SELECT AVG(constructedHeight) as average_height_feet FROM structure WHERE type = 'Guyed' AND constructedHeight IS NOT NULL
+2026-02-04 10:01:58,508 - INFO - __main__ - Params: ()
+2026-02-04 10:01:58,949 - ERROR - __main__ - Database error: column "constructedheight" does not exist
+LINE 1: SELECT AVG(constructedHeight) as average_height_feet FROM st...
+                   ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+
+2026-02-04 10:01:58,950 - ERROR - __main__ - Error in execute_query: Database error: column "constructedheight" does not exist
+LINE 1: SELECT AVG(constructedHeight) as average_height_feet FROM st...
+                   ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "constructedheight" does not exist
+LINE 1: SELECT AVG(constructedHeight) as average_height_feet FROM st...
+                   ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column "constructedheight" does not exist
+LINE 1: SELECT AVG(constructedHeight) as average_height_feet FROM st...
+                   ^
+HINT:  Perhaps you meant to reference the column "structure.constructedHeight".
+
+2026-02-04 10:02:01,395 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:02:01,401 - INFO - __main__ - Executing query: Calculate the average height of guyed towers across all organizations
+2026-02-04 10:02:01,402 - INFO - __main__ - SQL: SELECT AVG("constructedHeight") as average_height_feet FROM structure WHERE type = 'Guyed' AND "constructedHeight" IS NOT NULL
+2026-02-04 10:02:01,402 - INFO - __main__ - Params: ()
+2026-02-04 10:02:05,642 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:02:05,644 - INFO - __main__ - Executing query: Get the total count of guyed towers with height data
+2026-02-04 10:02:05,644 - INFO - __main__ - SQL: SELECT COUNT(*) as total_guyed_towers FROM structure WHERE type = 'Guyed' AND "constructedHeight" IS NOT NULL
+2026-02-04 10:02:05,644 - INFO - __main__ - Params: ()
+2026-02-04 10:02:08,984 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:02:08,989 - INFO - __main__ - Executing query: Get average height of guyed towers broken down by organization
+2026-02-04 10:02:08,989 - INFO - __main__ - SQL: SELECT o.name as organization_name, COUNT(*) as tower_count, AVG("constructedHeight") as avg_height FROM structure s JOIN organization o ON s."organizationId" = o.id WHERE s.type = 'Guyed' AND s."constructedHeight" IS NOT NULL GROUP BY o.id, o.name ORDER BY avg_height DESC
+2026-02-04 10:02:08,990 - INFO - __main__ - Params: ()
+2026-02-04 10:02:34,201 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:02:34,203 - INFO - __main__ - >>> Fetching site data for 1a7fbff1-5b9d-4c6d-9984-11f31811ec12
+2026-02-04 10:02:34,754 - INFO - __main__ - >>> Query returned 1 results
+2026-02-04 10:02:34,754 - INFO - __main__ - >>> Extracted coordinates: lat=31.14960034, lon=-90.46510662
+2026-02-04 10:02:34,755 - INFO - __main__ - >>> CALLING WEATHER API for 31.14960034, -90.46510662
+2026-02-04 10:02:35,711 - INFO - __main__ - >>> Weather API returned: ['current', 'forecast', 'success']
+2026-02-04 10:02:35,711 - INFO - __main__ - >>> Weather success: True
+2026-02-04 10:02:35,711 - INFO - __main__ - >>> Formatting weather data...
+2026-02-04 10:02:35,717 - INFO - __main__ - >>> Adding extreme weather check...
+2026-02-04 10:02:35,717 - INFO - __main__ - >>> WEATHER TOOL COMPLETE - returning 1016 chars
+2026-02-04 10:03:02,723 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:03,185 - ERROR - __main__ - Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:03:03,185 - ERROR - __main__ - Error in query_inspection_data: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 981, in call_tool
+    results_data['deficiencies'] = db.execute_query(query, tuple(params))
+                                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:03:06,621 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:06,623 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 10:03:08,592 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:10,589 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:12,842 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:14,872 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:18,041 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:20,188 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:22,379 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:24,144 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:27,166 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:27,808 - ERROR - __main__ - Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:03:27,808 - ERROR - __main__ - Error in query_inspection_data: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 981, in call_tool
+    results_data['deficiencies'] = db.execute_query(query, tuple(params))
+                                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:03:33,904 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:33,905 - INFO - __main__ - Executing query: Get all towers (structures) that have safety climb deficiencies with deficiency counts and details
+2026-02-04 10:03:33,906 - INFO - __main__ - SQL: SELECT DISTINCT
+    st.name as structure_name,
+    st.id as structure_id,
+    site.name as site_name,
+    site.id as site_id,
+    org.name as organization_name,
+    COUNT(d.id) as deficiency_count,
+    STRING_AGG(DISTINCT d.severity::text, ', ') as severities,
+    STRING_AGG(DISTINCT d.component, ', ') as components
+FROM deficiency d
+JOIN safety_climb sc ON d.safetyClimbId = sc.id
+JOIN structure_base sb ON sc.structureBaseId = sb.id
+JOIN structure st ON sb.structureId = st.id
+JOIN site ON st.siteId = site.id
+JOIN organization org ON d.organizationId = org.id
+GROUP BY st.name, st.id, site.name, site.id, org.name
+ORDER BY deficiency_count DESC, st.name
+2026-02-04 10:03:33,906 - INFO - __main__ - Params: ()
+2026-02-04 10:03:34,359 - ERROR - __main__ - Database error: column d.safetyclimbid does not exist
+LINE 11: JOIN safety_climb sc ON d.safetyClimbId = sc.id
+                                 ^
+
+2026-02-04 10:03:34,359 - ERROR - __main__ - Error in execute_query: Database error: column d.safetyclimbid does not exist
+LINE 11: JOIN safety_climb sc ON d.safetyClimbId = sc.id
+                                 ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column d.safetyclimbid does not exist
+LINE 11: JOIN safety_climb sc ON d.safetyClimbId = sc.id
+                                 ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column d.safetyclimbid does not exist
+LINE 11: JOIN safety_climb sc ON d.safetyClimbId = sc.id
+                                 ^
+
+2026-02-04 10:03:36,543 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:39,006 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:42,448 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:42,449 - INFO - __main__ - Executing query: Check relationship between safety climbs and surveys
+2026-02-04 10:03:42,450 - INFO - __main__ - SQL: SELECT 
+    sc.surveyId,
+    s.name as survey_name,
+    COUNT(sc.id) as safety_climb_count
+FROM safety_climb sc
+LEFT JOIN survey s ON sc.surveyId = s.id
+GROUP BY sc.surveyId, s.name
+LIMIT 10
+2026-02-04 10:03:42,450 - INFO - __main__ - Params: ()
+2026-02-04 10:03:42,921 - ERROR - __main__ - Database error: column sc.surveyid does not exist
+LINE 6: LEFT JOIN survey s ON sc.surveyId = s.id
+                              ^
+
+2026-02-04 10:03:42,922 - ERROR - __main__ - Error in execute_query: Database error: column sc.surveyid does not exist
+LINE 6: LEFT JOIN survey s ON sc.surveyId = s.id
+                              ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sc.surveyid does not exist
+LINE 6: LEFT JOIN survey s ON sc.surveyId = s.id
+                              ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sc.surveyid does not exist
+LINE 6: LEFT JOIN survey s ON sc.surveyId = s.id
+                              ^
+
+2026-02-04 10:03:44,772 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:46,940 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:46,942 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 10:03:49,809 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:03:49,811 - INFO - __main__ - Executing query: Find tables related to safety, deficiency, or climb
+2026-02-04 10:03:49,811 - INFO - __main__ - SQL: SELECT table_name 
+FROM information_schema.tables 
+WHERE table_name ILIKE '%safety%' 
+   OR table_name ILIKE '%deficiency%'
+   OR table_name ILIKE '%climb%'
+2026-02-04 10:03:49,811 - INFO - __main__ - Params: ()
+2026-02-04 10:03:50,159 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:03:50,159 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:04:01,950 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:04:02,391 - ERROR - __main__ - Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:04:02,392 - ERROR - __main__ - Error in query_inspection_data: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 981, in call_tool
+    results_data['deficiencies'] = db.execute_query(query, tuple(params))
+                                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:04:08,584 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:04:08,586 - INFO - __main__ - Executing query: Find deficiencies related to safety climbs by searching text fields
+2026-02-04 10:04:08,586 - INFO - __main__ - SQL: SELECT 
+    d.id,
+    d.name,
+    d.deficiencyCode,
+    d.deficiencyLocation,
+    d.description,
+    d.severity,
+    s.name as survey_name,
+    sv.name as site_visit_name
+FROM deficiency d
+LEFT JOIN survey s ON d.surveyId = s.id
+LEFT JOIN site_visit sv ON s.siteVisitId = sv.id
+WHERE LOWER(d.name) LIKE '%safety%climb%' 
+   OR LOWER(d.description) LIKE '%safety%climb%'
+   OR LOWER(d.deficiencyLocation) LIKE '%safety%climb%'
+ORDER BY d.createdAt DESC
+LIMIT 20
+2026-02-04 10:04:08,586 - INFO - __main__ - Params: ()
+2026-02-04 10:04:09,143 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:04:09,143 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:04:12,702 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:04:12,703 - INFO - __main__ - Executing query: Find deficiencies related to safety climbs
+2026-02-04 10:04:12,703 - INFO - __main__ - SQL: SELECT 
+    d.id,
+    d.name,
+    d.deficiencyCode,
+    d.deficiencyLocation,
+    d.description,
+    d.severity
+FROM deficiency d
+WHERE LOWER(d.name) LIKE '%safety%' AND LOWER(d.name) LIKE '%climb%'
+   OR LOWER(d.description) LIKE '%safety%' AND LOWER(d.description) LIKE '%climb%'
+   OR LOWER(d.deficiencyLocation) LIKE '%safety%' AND LOWER(d.deficiencyLocation) LIKE '%climb%'
+ORDER BY d.createdAt DESC
+LIMIT 20
+2026-02-04 10:04:12,704 - INFO - __main__ - Params: ()
+2026-02-04 10:04:13,028 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:04:13,028 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:04:15,265 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:04:15,273 - INFO - __main__ - Executing query: Get sample deficiency records
+2026-02-04 10:04:15,273 - INFO - __main__ - SQL: SELECT * FROM deficiency LIMIT 5
+2026-02-04 10:04:15,274 - INFO - __main__ - Params: ()
+2026-02-04 10:04:22,038 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:04:22,040 - INFO - __main__ - Executing query: Find all towers with safety climb related deficiencies
+2026-02-04 10:04:22,040 - INFO - __main__ - SQL: SELECT DISTINCT
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.deficiencyCode,
+    d.description,
+    d.severity,
+    d.notes,
+    d.elevation,
+    d.deficiencyLocation,
+    s.name as survey_name,
+    sv.name as site_visit_name,
+    sb.name as site_name,
+    t.name as tower_name,
+    t.id as tower_id,
+    o.name as organization_name
+FROM deficiency d
+JOIN survey s ON d.surveyId = s.id
+JOIN site_visit sv ON s.siteVisitId = sv.id
+JOIN site_base sb ON sv.siteId = sb.id
+JOIN tower t ON sv.towerId = t.id
+JOIN organization o ON d.organizationId = o.id
+WHERE d.deficiencyCode LIKE 'F1%' 
+   OR LOWER(d.description) LIKE '%safety%climb%'
+   OR LOWER(d.name) LIKE '%safety%climb%'
+ORDER BY o.name, sb.name, t.name, d.severity, d.elevation
+2026-02-04 10:04:22,040 - INFO - __main__ - Params: ()
+2026-02-04 10:04:22,380 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:04:22,381 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:05:01,806 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:05:03,352 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:05:07,461 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:05:07,465 - INFO - __main__ - Executing query: Find all towers/sites with safety climb related deficiencies
+2026-02-04 10:05:07,466 - INFO - __main__ - SQL: SELECT DISTINCT
+    d.id as deficiency_id,
+    d.name as deficiency_name,
+    d.deficiencyCode,
+    d.description,
+    d.severity,
+    d.notes,
+    d.elevation,
+    d.deficiencyLocation,
+    s.name as survey_name,
+    sv.name as site_visit_name,
+    sv.siteName as site_name,
+    o.name as organization_name
+FROM deficiency d
+JOIN survey s ON d.surveyId = s.id
+JOIN site_visit sv ON s.siteVisitId = sv.id
+JOIN organization o ON d.organizationId = o.id
+WHERE d.deficiencyCode LIKE 'F1%' 
+   OR LOWER(d.description) LIKE '%safety%climb%'
+   OR LOWER(d.name) LIKE '%safety%climb%'
+ORDER BY o.name, sv.siteName, d.severity, d.elevation
+2026-02-04 10:05:07,466 - INFO - __main__ - Params: ()
+2026-02-04 10:05:07,851 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:05:07,851 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:05:11,688 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:05:11,689 - INFO - __main__ - Executing query: Find safety climb related deficiencies
+2026-02-04 10:05:11,689 - INFO - __main__ - SQL: SELECT 
+    d.id,
+    d.name,
+    d.deficiencyCode,
+    d.description,
+    d.severity,
+    d.notes,
+    d.elevation,
+    d.deficiencyLocation,
+    d.surveyId
+FROM deficiency d
+WHERE d.deficiencyCode LIKE 'F1%' 
+   OR LOWER(d.description) LIKE '%safety%climb%'
+   OR LOWER(d.name) LIKE '%safety%climb%'
+2026-02-04 10:05:11,690 - INFO - __main__ - Params: ()
+2026-02-04 10:05:12,039 - ERROR - __main__ - Database error: tuple index out of range
+2026-02-04 10:05:12,040 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 661, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-02-04 10:05:14,291 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:05:14,798 - ERROR - __main__ - Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:05:14,798 - ERROR - __main__ - Error in query_inspection_data: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 262, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 981, in call_tool
+    results_data['deficiencies'] = db.execute_query(query, tuple(params))
+                                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 274, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: relation "deficencies" does not exist
+LINE 12:                         FROM deficencies d
+                                      ^
+
+2026-02-04 10:05:17,350 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-02-04 10:05:17,352 - ERROR - __main__ - Error in schema: 'tables'
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 605, in call_tool
+    response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                       ~~~^^^^^^^^^^
+KeyError: 'tables'
+2026-02-04 10:05:18,722 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
