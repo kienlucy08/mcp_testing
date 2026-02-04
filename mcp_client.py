@@ -37,26 +37,29 @@ def select_relevant_tools(query: str, all_tools: list) -> list:
     query_lower = query.lower()
     
     # Always include these core tools
-    core_tools = ["execute_query", "get_database_schema", "search_schema"]
+    core_tools = ["schema", "execute_query"]
     
     # Tool selection patterns
     tool_patterns = {
-        "get_table_sample": ["sample", "show me", "example", "what does", "look like"],
-        "find_related_data": ["related", "relationship", "foreign key", "joins"],
-        "query_safety_climbs": ["safety climb", "climb"],
-        "query_deficiencies": ["deficiency", "deficiencies", "issue", "problem", "fault"],
-        "get_sites_needing_inspection": ["overdue", "due", "tia", "inspection needed", "needs inspection", "checkup", "inspection"],
-        
-        # SITE LOCATION TOOLS
-        "get_site_coordinates": ["site coordinate", "site location", "where is site", "site address"],
-        "get_sites_near_location": ["sites near", "sites within", "nearby sites", "sites around", "find sites"],
-        "get_weather_for_site": ["weather for site", "site weather", "weather at site"],
-        
-        # SURVEY LOCATION TOOLS (if you still have these)
-        "get_survey_coordinates": ["survey coordinate", "survey location"],
-        "query_survey_payload": ["payload", "json", "survey data", "extract"],
-        "get_surveys_near_location": ["surveys near", "surveys within"],
-        "get_weather_for_survey": ["weather for survey", "survey weather"],
+        "explore_data_relationships": [
+            "related", "relationship", "foreign key", "joins", "how does",
+            "data model", "connected", "link between"
+        ],
+        "query_inspection_data": [
+            "safety climb", "climb", "deficiency", "deficiencies",
+            "issue", "problem", "fault", "inspection data"
+        ],
+        "get_sites_needing_inspection": [
+            "overdue", "due", "tia", "inspection needed", "needs inspection",
+            "checkup", "compliance", "never inspected"
+        ],
+        "query_sites_by_location": [
+            "coordinate", "location", "where is", "address", "near",
+            "within", "nearby", "around", "radius", "miles", "find sites"
+        ],
+        "get_weather_for_site": [
+            "weather", "temperature", "forecast", "wind", "conditions"
+        ],
     }
     
     selected_tools = set(core_tools)
@@ -66,18 +69,13 @@ def select_relevant_tools(query: str, all_tools: list) -> list:
         if any(pattern in query_lower for pattern in patterns):
             selected_tools.add(tool_name)
     
-    # Special cases
-    if any(word in query_lower for word in ["weather", "temperature", "forecast"]):
-        if "site" in query_lower:
-            selected_tools.add("get_weather_for_site")
-            selected_tools.add("get_site_coordinates")
-        if "survey" in query_lower:
-            selected_tools.add("get_weather_for_survey")
-    
-    if any(word in query_lower for word in ["near", "within", "radius", "miles"]):
-        if "site" in query_lower:
-            selected_tools.add("get_sites_near_location")
-            selected_tools.add("get_site_coordinates")
+    # Special case: if asking about weather, also include location tool
+    if "weather" in query_lower:
+        selected_tools.add("get_weather_for_site")
+        selected_tools.add("query_sites_by_location")
+    # Special case: inspection queries might need relationships
+    if "inspection" in query_lower:
+        selected_tools.add("explore_data_relationships")
     
     # Filter the actual tool definitions
     relevant_tools = [

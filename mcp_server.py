@@ -376,36 +376,25 @@ async def list_tools() -> list[Tool]:
     """List available tools"""
     return [
         Tool(
-            name="get_database_schema",
-            description="Get the complete database schema including all tables, columns, and relationships.",
+            name="schema",
+            description="Get database schema information. Can retrieve full schema, specific table details, or search for tables/columns by name.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "table_name": {
                         "type": "string",
-                        "description": "Optional: Get schema for specific table only"
+                        "description": "Get schema for a specific table only"
+                    },
+                    "search_term": {
+                        "type": "string",
+                        "description": "Search for tables/columns matching this term"
                     }
                 }
             }
         ),
         Tool(
-            name="search_schema",
-            description="""Search the database schema for tables or columns matching a term.
-            """,
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "search_term": {
-                        "type": "string",
-                        "description": "Term to search for in table and column names"
-                    }
-                },
-                "required": ["search_term"]
-            }
-        ),
-        Tool(
             name="execute_query",
-            description="""Execute a custom SQL SELECT query. Use this after understanding the schema.
+            description="""Execute a custom SQL SELECT query. Use this for any data retrieval after understanding the schema.
             """,
             inputSchema={
                 "type": "object",
@@ -428,41 +417,8 @@ async def list_tools() -> list[Tool]:
             }
         ),
         Tool(
-            name="get_table_sample",
-            description="Get a sample of rows from a table to understand the data",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "table_name": {
-                        "type": "string",
-                        "description": "Name of the table to sample"
-                    },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Number of rows to return (default: 5)",
-                        "default": 5
-                    }
-                },
-                "required": ["table_name"]
-            }
-        ),
-        Tool(
-            name="find_related_data",
-            description="Find what tables are related to a given table through foreign keys",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "table_name": {
-                        "type": "string",
-                        "description": "Table to find relationships for"
-                    }
-                },
-                "required": ["table_name"]
-            }
-        ),
-        Tool(
             name="explore_data_relationships",
-            description="Comprehensively explore how data flows between tables. Use this to understand the full data model for concepts like 'organization towers', 'site visits', 'surveys', etc.",
+            description="Explore how data flows between tables. Use this to understand the data model, find foreign key relationships, and trace connections between concepts like organizations, sites, structures, visits, etc.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -479,158 +435,70 @@ async def list_tools() -> list[Tool]:
             }
         ),
         Tool(
-            name="count_records_in_relationship",
-            description="Count records across related tables to verify data exists. Useful for finding where data actually lives.",
+            name="query_inspection_data",
+            description="Query safety climb, deficiency, appurtenance data with flexible filtering. Unfiied tool for all inspection-related queries",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "from_table": {
+                    "data_type": {
                         "type": "string",
-                        "description": "Starting table"
+                        "enum": ["safety_climb", "deficiency", "appurtenance", "antenna_equipment", "guy_attachment", "guy_wire", "generator", "fuel_tank"],
+                        "description": "Type of inspection data to query"
                     },
-                    "from_id": {
-                        "type": "string",
-                        "description": "ID value to trace"
-                    },
-                    "related_tables": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "List of potentially related tables to check"
-                    }
-                },
-                "required": ["from_table", "from_id"]
-            }
-        ),
-        Tool(
-            name="query_safety_climbs",
-            description="Query safety climb data with flexible filtering. Can filter by organization, site, date range, status, etc.",
-            inputSchema={
-                "type": "object",
-                "properties": {
                     "organization_id": {
                         "type": "string",
                         "description": "Filter by organization UUID"
-                    },
-                    "site_id": {
-                        "type": "string",
-                        "description": "Filter by specific site UUID"
-                    },
-                    "date_from": {
-                        "type": "string",
-                        "description": "Start date for filtering (YYYY-MM-DD format)"
-                    },
-                    "date_to": {
-                        "type": "string",
-                        "description": "End date for filtering (YYYY-MM-DD format)"
-                    },
-                    "status": {
-                        "type": "string",
-                        "description": "Filter by safety climb status"
-                    },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of results to return (default: 100)",
-                        "default": 100
-                    },
-                    "include_related": {
-                        "type": "boolean",
-                        "description": "Include related data from joined tables (site info, etc.)",
-                        "default": True
-                    }
-                }
-            }
-        ),
-        Tool(
-            name="query_deficiencies",
-            description="Query deficiency data across related tables. Can join with safety climbs, sites, structures, etc.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "organization_id": {
-                        "type": "string",
-                        "description": "Filter by organization UUID"
-                    },
-                    "site_id": {
-                        "type": "string",
-                        "description": "Filter by specific site UUID"
                     },
                     "safety_climb_id": {
                         "type": "string",
-                        "description": "Filter by specific safety climb UUID"
+                        "description": "Filter deficiencies by specific safety climb UUID"
                     },
                     "severity": {
                         "type": "string",
-                        "description": "Filter by deficiency severity level"
+                        "description": "Filter deficiencies by severity level. 1 is the worst severity, 3 is the least."
                     },
-                    "status": {
+                    "survey_id": {
                         "type": "string",
-                        "description": "Filter by deficiency status (open, closed, etc.)"
+                        "description": "Filter by survey UUID"
                     },
                     "date_from": {
                         "type": "string",
-                        "description": "Start date for filtering (YYYY-MM-DD format)"
-                    },
-                    "date_to": {
-                        "type": "string",
-                        "description": "End date for filtering (YYYY-MM-DD format)"
-                    },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of results to return (default: 100)",
-                        "default": 100
-                    },
-                    "include_related": {
-                        "type": "boolean",
-                        "description": "Include related data from joined tables",
-                        "default": True
+                        "description": "Start date"
                     }
                 }
             }
         ),
         Tool(
-            name="get_site_coordinates",
-            description="Get coordinates and location data for a site. Returns latitude, longitude, address, city, state.",
+            name="query_sites_by_location",
+            description="""Query sites by location. Can get coordinates for a single site,
+            or find all sites within a radius of coordinates or another site.""",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "site_id": {
                         "type": "string",
-                        "description": "Site UUID"
-                    }
-                },
-                "required": ["site_id"]
-            }
-        ),
-        Tool(
-            name="get_sites_near_location",
-            description="Find all sites within a radius of given coordinates or near another site.",
-            inputSchema={
-                "type": "object",
-                "properties": {
+                        "description": "Site UUID - if provided alone, returns that site's coordinates. If with radius finds nearby sites."
+                    },
                     "latitude": {
                         "type": "number",
-                        "description": "Center latitude"
+                        "description": "Center latitude for radius search"
                     },
                     "longitude": {
                         "type": "number",
-                        "description": "Center longitude"
-                    },
-                    "site_id": {
-                        "type": "string",
-                        "description": "Alternative: Find sites near this site"
+                        "description": "Center longitude for radius search"
                     },
                     "radius_miles": {
                         "type": "number",
-                        "description": "Search radius in miles (default: 10)",
+                        "description": "Search radius in miles (triggers nearby search mode)",
                         "default": 10
                     },
                     "organization_id": {
                         "type": "string",
-                        "description": "Optional: Filter to specific organization"
+                        "description": "Filter by organization UUID"
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum results (default: 50)",
+                        "description": "Maximum results for radius search (default: 50)",
                         "default": 50
                     }
                 }
@@ -638,7 +506,8 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="get_weather_for_site",
-            description="Get weather data for a site location. Returns coordinates and instructions for weather search.",
+            description="""Get current weather for forecast for a site location.
+            Includes temperature, conditions, wind, and extreme weather alerts.""",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -648,8 +517,8 @@ async def list_tools() -> list[Tool]:
                     },
                     "include_forecast": {
                         "type": "boolean",
-                        "description": "Include forecast info (default: false)",
-                        "default": False
+                        "description": "Include 5-day forecast info (default: true)",
+                        "default": True
                     },
                     "include_extreme_events": {
                         "type": "boolean",
@@ -662,8 +531,8 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="get_sites_needing_inspection",
-            description="""Find all sites that haven't had a site visit in over 3 years (overdue for inspection).
-            Returns sites with their last visit date and how long it's been since the last visit.""",
+            description="""Find towers overdue for inspection based on tower type requiements.
+            Guyed towers require inspection every 3 years, monopole/self-support every 5 years.""",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -696,10 +565,32 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Handle tool calls"""
     
     try:
-        if name == "get_database_schema":
+        if name == "schema":
             table_name = arguments.get("table_name")
+            search_term = arguments.get("search_term")
             schema = db.get_schema()
+
+            # Search mode!
+            if search_term:
+                matches = db.search_schema(search_term)
+                response = f"Schema search results for '{search_term}':\n\n"
+
+                if matches['tables']:
+                    response += "Matching Tables:\n"
+                    for table in matches['tables']:
+                        response += f"  - {table}\n"
+                    response += "\n"
+                
+                if matches['columns']:
+                    response += "Matching Columns:\n"
+                    for col in matches['columns']:
+                        response += f"  - {col['tables']}.{col['column']} ({col['type']})\n"
+                if not matches['tables'] and not matches['columns']:
+                    response += "No matches found."
+
+                return [TextContent(type="text", text=response)]
             
+            # Specific table mode!!
             if table_name:
                 if table_name not in schema:
                     return [TextContent(
@@ -719,37 +610,16 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                     for fk in table_info['foreign_keys']:
                         response += f"  - {fk['column_name']} -> {fk['foreign_table_name']}.{fk['foreign_column_name']}\n"
             else:
+                # full schema overview
                 response = "Database Schema:\n\n"
                 response += f"Total tables: {len(schema)}\n\n"
                 
                 for table, info in schema.items():
-                    response += f"📋 {table}\n"
+                    response += f"{table}\n"
                     response += f"   Columns: {len(info['columns'])}\n"
                     if info['foreign_keys']:
                         response += f"   Foreign keys: {len(info['foreign_keys'])}\n"
                     response += "\n"
-            
-            return [TextContent(type="text", text=response)]
-        
-        elif name == "search_schema":
-            search_term = arguments["search_term"]
-            matches = db.search_schema(search_term)
-            
-            response = f"Schema search results for '{search_term}':\n\n"
-            
-            if matches['tables']:
-                response += "Matching Tables:\n"
-                for table in matches['tables']:
-                    response += f"  - {table}\n"
-                response += "\n"
-            
-            if matches['columns']:
-                response += "Matching Columns:\n"
-                for col in matches['columns']:
-                    response += f"  - {col['table']}.{col['column']} ({col['type']})\n"
-            
-            if not matches['tables'] and not matches['columns']:
-                response += "No matches found."
             
             return [TextContent(type="text", text=response)]
         
@@ -788,68 +658,6 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             return [TextContent(type="text", text=response)]
         
-        elif name == "get_table_sample":
-            table_name = arguments["table_name"]
-            limit = arguments.get("limit", 5)
-            
-            # Verify table exists
-            schema = db.get_schema()
-            if table_name not in schema:
-                return [TextContent(
-                    type="text",
-                    text=f"Table '{table_name}' not found"
-                )]
-            
-            query = f'SELECT * FROM "{table_name}" LIMIT %s'
-            results = db.execute_query(query, (limit,))
-            
-            response = f"Sample data from {table_name} ({len(results)} rows):\n\n"
-            response += json.dumps(results, indent=2, default=str)
-            
-            return [TextContent(type="text", text=response)]
-        
-        elif name == "find_related_data":
-            table_name = arguments["table_name"]
-            schema = db.get_schema()
-            
-            if table_name not in schema:
-                return [TextContent(
-                    type="text",
-                    text=f"Table '{table_name}' not found"
-                )]
-            
-            table_info = schema[table_name]
-            response = f"Relationships for table: {table_name}\n\n"
-            
-            # Outgoing relationships (this table references others)
-            if table_info['foreign_keys']:
-                response += "This table references:\n"
-                for fk in table_info['foreign_keys']:
-                    response += f"  - {fk['foreign_table_name']} (via {fk['column_name']})\n"
-                response += "\n"
-            
-            # Incoming relationships (other tables reference this one)
-            incoming = []
-            for other_table, other_info in schema.items():
-                if other_table == table_name:
-                    continue
-                for fk in other_info['foreign_keys']:
-                    if fk['foreign_table_name'] == table_name:
-                        incoming.append({
-                            'table': other_table,
-                            'column': fk['column_name']
-                        })
-            
-            if incoming:
-                response += "Referenced by:\n"
-                for rel in incoming:
-                    response += f"  - {rel['table']} (via {rel['column']})\n"
-            
-            if not table_info['foreign_keys'] and not incoming:
-                response += "No foreign key relationships found."
-            
-            return [TextContent(type="text", text=response)]
-        
         elif name == "explore_data_relationships":
             starting_table = arguments["starting_table"]
             concept = arguments["concept"]
@@ -869,7 +677,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             response += f"Tables matching '{concept}':\n"
             if concept_matches['tables']:
                 for table in concept_matches['tables']:
-                    response += f"  📋 {table}\n"
+                    response += f"  {table}\n"
             else:
                 response += "  (none found)\n"
             response += "\n"
@@ -920,219 +728,254 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             return [TextContent(type="text", text=response)]
         
-        elif name == "count_records_in_relationship":
-            from_table = arguments["from_table"]
-            from_id = arguments["from_id"]
-            related_tables = arguments.get("related_tables", [])
-            
-            schema = db.get_schema()
-            
-            if from_table not in schema:
-                return [TextContent(
-                    type="text",
-                    text=f"Table '{from_table}' not found"
-                )]
-            
-            response = f"Counting records related to {from_table} (id: {from_id}):\n\n"
-            
-            # If no related tables specified, find them automatically
-            if not related_tables:
-                related_tables = []
-                # Find tables that reference this table
-                for table, info in schema.items():
-                    for fk in info['foreign_keys']:
-                        if fk['foreign_table_name'] == from_table:
-                            related_tables.append(table)
-            
-            # Check each related table
-            for related_table in related_tables:
-                if related_table not in schema:
-                    response += f"  ⚠️  {related_table}: Table not found\n"
-                    continue
-                
-                table_info = schema[related_table]
-                
-                # Find the foreign key column that points to from_table
-                fk_column = None
-                for fk in table_info['foreign_keys']:
-                    if fk['foreign_table_name'] == from_table:
-                        fk_column = fk['column_name']
-                        break
-                
-                if not fk_column:
-                    # Try common column name patterns
-                    possible_columns = [
-                        f"{from_table}Id",
-                        f"{from_table}_id",
-                        f'"{from_table}Id"',
-                        "organizationId",
-                        "siteId",
-                        "structureId"
-                    ]
-                    
-                    # Check which column exists
-                    table_columns = [col['column_name'] for col in table_info['columns']]
-                    for possible in possible_columns:
-                        clean_col = possible.strip('"')
-                        if clean_col in table_columns:
-                            fk_column = clean_col
-                            break
-                
-                if fk_column:
-                    try:
-                        # Handle quoted column names
-                        if any(c.isupper() for c in fk_column):
-                            fk_column_quoted = f'"{fk_column}"'
-                        else:
-                            fk_column_quoted = fk_column
-                        
-                        query = f"SELECT COUNT(*) as count FROM {related_table} WHERE {fk_column_quoted} = %s"
-                        result = db.execute_query(query, (from_id,))
-                        count = result[0]['count'] if result else 0
-                        response += f"  ✓ {related_table}: {count} records (via {fk_column})\n"
-                    except Exception as e:
-                        response += f"  ⚠️  {related_table}: Error - {str(e)}\n"
-                else:
-                    response += f"  ⚠️  {related_table}: No clear foreign key found\n"
-            
-            return [TextContent(type="text", text=response)]
-        
-        elif name == "get_site_coordinates":
-            site_id = arguments["site_id"]
-            query = """
-                SELECT 
-                    id as site_id,
-                    name as site_name,
-                    address,
-                    country,
-                    elevation,
-                    ST_Y(location) as latitude,
-                    ST_X(location) as longitude
-                FROM site
-                WHERE id = %s
-            """
-            
-            results = db.execute_query(query, (site_id,))
-            
-            if not results:
-                return [TextContent(
-                    type="text",
-                    text=f"Site not found: {site_id}"
-                )]
-            
-            site_data = results[0]
-            
-            if not site_data.get('latitude') or not site_data.get('longitude'):
-                return [TextContent(
-                    type="text",
-                    text=f"No coordinates found for site: {site_data.get('site_name', 'Unknown')}"
-                )]
-            
-            response = f"📍 Site Location Data\n\n"
-            response += f"Site: {site_data['site_name']}\n"
-            response += f"Address: {site_data.get('address', 'N/A')}\n"
-            response += f"Country: {site_data.get('country', 'N/A')}\n"
-            response += f"Elevation: {site_data.get('elevation', 'N/A')} meters\n"
-            response += f"Coordinates: {site_data['latitude']}°N, {site_data['longitude']}°W\n"
-            
-            return [TextContent(type="text", text=response)]
-        
-        elif name == "get_sites_near_location":
-            center_lat = arguments.get("latitude")
-            center_lon = arguments.get("longitude")
+        elif name == "get_sites_by_location":
             site_id = arguments.get("site_id")
-            radius_miles = arguments.get("radius_miles", 10)
+            center_lat = arguments.get("latitude")
+            center_long = arguments.get("longitude")
+            radius_miles = arguments.get("radius_miles")
             organization_id = arguments.get("organization_id")
             limit = arguments.get("limit", 50)
-            
-            # If site_id provided, get its coordinates first
-            if site_id and not (center_lat and center_lon):
-                coord_query = """
+
+            # Determine mode: single site lookup vs radius search
+            is_radius_search = radius_miles is not None or center_lat is not None or center_long is not None
+
+            # Mode 1 - single site coordniates lookup no radius
+            if site_id and not is_radius_search:
+                query = """
                     SELECT 
-                        name,
+                        id as site_id,
+                        name as site_name,
+                        address,
+                        country,
+                        elevation,
                         ST_Y(location) as latitude,
                         ST_X(location) as longitude
                     FROM site
                     WHERE id = %s
                 """
-                coord_result = db.execute_query(coord_query, (site_id,))
-                
-                if not coord_result or not coord_result[0].get('latitude'):
+                results = db.execute_query(query, (site_id,))
+                if not results:
                     return [TextContent(
                         type="text",
-                        text=f"No coordinates found for site: {site_id}"
+                        text=f"Site not found: {site_id}"
+                    )]
+            
+                site_data = results[0]
+                
+                if not site_data.get('latitude') or not site_data.get('longitude'):
+                    return [TextContent(
+                        type="text",
+                        text=f"No coordinates found for site: {site_data.get('site_name', 'Unknown')}"
                     )]
                 
-                center_lat = coord_result[0]['latitude']
-                center_lon = coord_result[0]['longitude']
-                reference_name = coord_result[0]['name']
+                response = f"Site Location Data\n\n"
+                response += f"Site: {site_data['site_name']}\n"
+                response += f"Address: {site_data.get('address', 'N/A')}\n"
+                response += f"Country: {site_data.get('country', 'N/A')}\n"
+                response += f"Elevation: {site_data.get('elevation', 'N/A')} meters\n"
+                response += f"Coordinates: {site_data['latitude']}°N, {site_data['longitude']}°W\n"
             
-            if not (center_lat and center_lon):
+                return [TextContent(type="text", text=response)]
+
+            radius_miles = radius_miles or 10
+            reference_name = None
+
+            if site_id and not (center_lat and center_long):
+                coord_query = """
+                    SELECT
+                        name,
+                        ST_Y(location) as latitude,
+                        ST_X(location) as longitude
+                    WHERE id = %s
+                """
+                coord_result = db.execute_query(coord_query, (site_id,))
+                if not coord_result or not coord_result[0].get('latitude'):
+                    return [TextContent(type="text", text=f"No coordniates found for site: {site_id}")]
+                
+                center_lat = coord_result[0]['latitude']
+                center_long = coord_result[0]['longitude']
+                reference_name = coord_result[0]['name']
+            if not (center_lat and center_long):
                 return [TextContent(
                     type="text",
                     text="Error: Either latitude/longitude or site_id must be provided"
                 )]
-            
             # Build WHERE clause
-            where_clauses = [
-                "location IS NOT NULL",
-            ]
-            params = [center_lat, center_lon, center_lat, radius_miles]
-            
+            where_clauses = ["location IS NOT NULL"]
+            params = [center_long, center_lat, radius_miles]
             if organization_id:
                 where_clauses.append('"organizationId" = %s')
                 params.append(organization_id)
-            
             if site_id:
                 where_clauses.append('id != %s')
                 params.append(site_id)
-            
             params.append(limit)
-            
-            # Haversine distance calculation
             query = f"""
-                SELECT 
+                SELECT
                     id,
                     name,
                     address,
-                    country,
-                    ST_Y(location) as latitude,
-                    ST_X(location) as longitude,
-                    ST_Distance(
-                        location::geography,
-                        ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
                     ) / 1609.34 AS distance_miles
                 FROM site
                 WHERE {' AND '.join(where_clauses)}
-                HAVING distance_miles <= %s
+                  AND ST_Distance(
+                        location::geography,
+                        ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
+                      ) / 1609.34 <= %s
                 ORDER BY distance_miles
                 LIMIT %s
             """
-            
-            results = db.execute_query(query, tuple(params))
-            
+            # Adjust params for the repeated use of coordinates
+            params = [center_long, center_lat, center_long, center_lat, radius_miles]
+            if organization_id:
+                params.append(organization_id)
             if site_id:
+                params.append(site_id)
+            params.append(limit)
+            results = db.execute_query(query, tuple(params))
+            if reference_name:
                 response = f"Sites within {radius_miles} miles of '{reference_name}':\n\n"
             else:
-                response = f"Sites within {radius_miles} miles of ({center_lat}, {center_lon}):\n\n"
-            
+                response = f"Sites within {radius_miles} miles of ({center_lat}, {center_long}):\n\n"
             response += f"Found {len(results)} site(s)\n\n"
-            
-            # Format results efficiently
             if len(results) <= 10:
                 for site in results:
-                    response += f"📍 {site['name']}\n"
+                    response += f"{site['name']}\n"
                     response += f"   {site.get('address', 'No address')}, {site.get('country', '')}\n"
                     response += f"   Distance: {site['distance_miles']:.2f} miles\n"
                     response += f"   ID: {site['id']}\n\n"
             else:
-                # Summarized format for many results
                 for site in results[:10]:
-                    response += f"• {site['name']} - {site['distance_miles']:.2f} mi - {site.get('country', '')}\n"
+                    response += f"* {site['name']} - {site['distance_miles']:.2f} mi - {site.get('country', '')}\n"
                 response += f"\n... and {len(results) - 10} more sites\n"
-            
             return [TextContent(type="text", text=response)]
         
+        elif name == "query_inspection_data":
+            data_type = arguments.get("data_type", "both")
+            organization_id = arguments.get("organization_id")
+            site_id = arguments.get("site_id")
+            safety_climb_id = arguments.get("safety_climb_id")
+            severity = arguments.get("severity")
+            status = arguments.get("status")
+            date_from = arguments.get("date_from")
+            date_to = arguments.get("date_to")
+            limit = arguments.get("limit", 100)
+            include_related = arguments.get("include_related", True)
+            results_data = {}
+            # Query safety climbs
+            if data_type in ["safety_climbs", "both"]:
+                where_clauses = []
+                params = []
+                if include_related:
+                    base_query = """
+                        SELECT
+                            sc.id as safety_climb_id,
+                            sc.status,
+                            sc."createdAt" as created_at,
+                            sc."updatedAt" as updated_at,
+                            s.id as site_id,
+                            s.name as site_name,
+                            s.address,
+                            o.name as organization_name
+                        FROM safety_climb sc
+                        LEFT JOIN site s ON sc."siteId" = s.id
+                        LEFT JOIN organization o ON s."organizationId" = o.id
+                    """
+                else:
+                    base_query = "SELECT * FROM safety_climb sc"
+                if organization_id:
+                    where_clauses.append('s."organizationId" = %s')
+                    params.append(organization_id)
+                if site_id:
+                    where_clauses.append('sc."siteId" = %s')
+                    params.append(site_id)
+                if status:
+                    where_clauses.append('sc.status = %s')
+                    params.append(status)
+                if date_from:
+                    where_clauses.append('sc."createdAt" >= %s')
+                    params.append(date_from)
+                if date_to:
+                    where_clauses.append('sc."createdAt" <= %s')
+                    params.append(date_to)
+                where_clause = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+                query = f"{base_query} {where_clause} ORDER BY sc.\"createdAt\" DESC LIMIT %s"
+                params.append(limit)
+                results_data['safety_climbs'] = db.execute_query(query, tuple(params))
+            # Query deficiencies
+            if data_type in ["deficiencies", "both"]:
+                where_clauses = []
+                params = []
+                if include_related:
+                    base_query = """
+                        SELECT
+                            d.id as deficiency_id,
+                            d.severity,
+                            d.status,
+                            d.description,
+                            d."createdAt" as created_at,
+                            sc.id as safety_climb_id,
+                            s.id as site_id,
+                            s.name as site_name,
+                            o.name as organization_name
+                        FROM deficencies d
+                        LEFT JOIN safety_climb sc ON d."safetyClimbId" = sc.id
+                        LEFT JOIN site s ON sc."siteId" = s.id
+                        LEFT JOIN organization o ON s."organizationId" = o.id
+                    """
+                else:
+                    base_query = "SELECT * FROM deficencies d"
+                if organization_id:
+                    where_clauses.append('s."organizationId" = %s')
+                    params.append(organization_id)
+                if site_id:
+                    where_clauses.append('s.id = %s')
+                    params.append(site_id)
+                if safety_climb_id:
+                    where_clauses.append('d."safetyClimbId" = %s')
+                    params.append(safety_climb_id)
+                if severity:
+                    where_clauses.append('d.severity = %s')
+                    params.append(severity)
+                if status:
+                    where_clauses.append('d.status = %s')
+                    params.append(status)
+                if date_from:
+                    where_clauses.append('d."createdAt" >= %s')
+                    params.append(date_from)
+                if date_to:
+                    where_clauses.append('d."createdAt" <= %s')
+                    params.append(date_to)
+                where_clause = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+                query = f"{base_query} {where_clause} ORDER BY d.\"createdAt\" DESC LIMIT %s"
+                params.append(limit)
+                results_data['deficiencies'] = db.execute_query(query, tuple(params))
+            # Format response
+            response = f"Inspection Data Query Results\n"
+            response += f"{'='*60}\n\n"
+            if 'safety_climbs' in results_data:
+                sc_results = results_data['safety_climbs']
+                response += f"SAFETY CLIMBS: {len(sc_results)} records\n"
+                response += f"{'-'*40}\n"
+                if sc_results:
+                    response += json.dumps(sc_results[:10], indent=2, default=str)
+                    if len(sc_results) > 10:
+                        response += f"\n... and {len(sc_results) - 10} more records\n"
+                else:
+                    response += "No safety climb records found.\n"
+                response += "\n\n"
+            if 'deficiencies' in results_data:
+                def_results = results_data['deficiencies']
+                response += f"DEFICIENCIES: {len(def_results)} records\n"
+                response += f"{'-'*40}\n"
+                if def_results:
+                    response += json.dumps(def_results[:10], indent=2, default=str)
+                    if len(def_results) > 10:
+                        response += f"\n... and {len(def_results) - 10} more records\n"
+                else:
+                    response += "No deficiency records found.\n"
+            return [TextContent(type="text", text=response)]
+
         elif name == "get_weather_for_site":
             site_id = arguments["site_id"]
             include_forecast = arguments.get("include_forecast", True)  # Changed default to True
