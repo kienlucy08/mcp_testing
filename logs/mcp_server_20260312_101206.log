@@ -1,0 +1,706 @@
+2026-03-12 10:12:06,626 - INFO - __main__ - DEMO MODE: Data access restricted to org 'FieldSync' (ID: 06f64dce-6fde-4a49-bba8-ed9a22498516)
+2026-03-12 10:12:06,627 - INFO - __main__ - Environment loaded
+2026-03-12 10:12:06,627 - INFO - __main__ -   Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-03-12 10:12:06,627 - INFO - __main__ -   User: postgres
+2026-03-12 10:12:06,642 - INFO - __main__ - ============================================================
+2026-03-12 10:12:06,642 - INFO - __main__ - Dynamic Database MCP Server Starting...
+2026-03-12 10:12:06,645 - INFO - __main__ - ============================================================
+2026-03-12 10:12:06,645 - INFO - __main__ - Database Type: postgres
+2026-03-12 10:12:06,646 - INFO - __main__ - Database Host: fieldsync-postgres-test-ef7b1fb.c6h0n29wfk5h.us-east-1.rds.amazonaws.com
+2026-03-12 10:12:06,646 - INFO - __main__ - Database Name: postgres
+2026-03-12 10:12:06,646 - INFO - __main__ - Database User: postgres
+2026-03-12 10:12:06,646 - INFO - __main__ - Testing database connection...
+2026-03-12 10:12:07,216 - INFO - __main__ - ✓ Successfully connected to database
+2026-03-12 10:12:07,217 - INFO - __main__ - Caching database schema...
+2026-03-12 10:14:26,276 - INFO - __main__ - ✓ Cached schema with 115 tables
+2026-03-12 10:14:26,277 - INFO - __main__ - Starting MCP server stdio interface...
+2026-03-12 10:14:26,298 - INFO - mcp.server.lowlevel.server - Processing request of type ListToolsRequest
+2026-03-12 10:15:14,028 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:14,032 - INFO - __main__ - DEMO SAFEGUARD: query_inspection_data scoped to org 06f64dce-6fde-4a49-bba8-ed9a22498516
+2026-03-12 10:15:14,594 - ERROR - __main__ - Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:15:14,595 - ERROR - __main__ - Error in query_inspection_data: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1087, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:15:19,672 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:19,676 - INFO - __main__ - Executing query: Find all towers/sites with safety climb related deficiencies
+2026-03-12 10:15:19,676 - INFO - __main__ - SQL: SELECT DISTINCT 
+    s.name as site_name,
+    s.id as site_id,
+    s.latitude,
+    s.longitude,
+    d.name as deficiency_name,
+    d.description as deficiency_description,
+    d.severity,
+    sv.createdAt as survey_date
+FROM deficiency d
+JOIN survey sv ON d.surveyId = sv.id
+JOIN site s ON sv.siteId = s.id
+WHERE s.organizationId = %s 
+    AND (LOWER(d.name) LIKE %s OR LOWER(d.description) LIKE %s)
+ORDER BY s.name, sv.createdAt DESC
+2026-03-12 10:15:19,677 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516', '%safety climb%', '%safety climb%')
+2026-03-12 10:15:20,244 - ERROR - __main__ - Database error: column d.surveyid does not exist
+LINE 11: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+2026-03-12 10:15:20,244 - ERROR - __main__ - Error in execute_query: Database error: column d.surveyid does not exist
+LINE 11: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column d.surveyid does not exist
+LINE 11: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column d.surveyid does not exist
+LINE 11: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+2026-03-12 10:15:22,163 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:23,984 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:25,830 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:28,102 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:34,238 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:34,244 - INFO - __main__ - Executing query: Find all towers/sites with safety climb related deficiencies
+2026-03-12 10:15:34,244 - INFO - __main__ - SQL: SELECT DISTINCT 
+    s.name as site_name,
+    s.id as site_id,
+    s.latitude,
+    s.longitude,
+    d.name as deficiency_name,
+    d.description as deficiency_description,
+    d.severity,
+    d.deficiencyCode,
+    d.deficiencyLocation,
+    sv.siteVisitDate as survey_date,
+    sv.name as survey_name
+FROM deficiency d
+JOIN survey sv ON d.surveyId = sv.id
+JOIN site_visit svi ON sv.siteVisitId = svi.id
+JOIN site s ON svi.siteId = s.id
+WHERE d.organizationId = %s 
+    AND (LOWER(d.name) LIKE %s 
+         OR LOWER(d.description) LIKE %s 
+         OR LOWER(d.deficiencyCode) LIKE %s
+         OR LOWER(d.deficiencyLocation) LIKE %s)
+ORDER BY s.name, sv.siteVisitDate DESC
+2026-03-12 10:15:34,245 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516', '%safety climb%', '%safety climb%', '%safety climb%', '%safety climb%')
+2026-03-12 10:15:35,380 - ERROR - __main__ - Database error: column d.surveyid does not exist
+LINE 14: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+2026-03-12 10:15:35,381 - ERROR - __main__ - Error in execute_query: Database error: column d.surveyid does not exist
+LINE 14: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column d.surveyid does not exist
+LINE 14: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column d.surveyid does not exist
+LINE 14: JOIN survey sv ON d.surveyId = sv.id
+                           ^
+HINT:  Perhaps you meant to reference the column "d.surveyId".
+
+2026-03-12 10:15:40,410 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:40,412 - INFO - __main__ - Executing query: Find all towers/sites with safety climb related deficiencies
+2026-03-12 10:15:40,412 - INFO - __main__ - SQL: SELECT DISTINCT 
+    s.name as site_name,
+    s.id as site_id,
+    s.latitude,
+    s.longitude,
+    d.name as deficiency_name,
+    d.description as deficiency_description,
+    d.severity,
+    d."deficiencyCode",
+    d."deficiencyLocation",
+    sv."siteVisitDate" as survey_date,
+    sv.name as survey_name
+FROM deficiency d
+JOIN survey sv ON d."surveyId" = sv.id
+JOIN site_visit svi ON sv."siteVisitId" = svi.id
+JOIN site s ON svi."siteId" = s.id
+WHERE d."organizationId" = %s 
+    AND (LOWER(d.name) LIKE %s 
+         OR LOWER(d.description) LIKE %s 
+         OR LOWER(d."deficiencyCode") LIKE %s
+         OR LOWER(d."deficiencyLocation") LIKE %s)
+ORDER BY s.name, sv."siteVisitDate" DESC
+2026-03-12 10:15:40,413 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516', '%safety climb%', '%safety climb%', '%safety climb%', '%safety climb%')
+2026-03-12 10:15:41,002 - ERROR - __main__ - Database error: column s.latitude does not exist
+LINE 4:     s.latitude,
+            ^
+
+2026-03-12 10:15:41,003 - ERROR - __main__ - Error in execute_query: Database error: column s.latitude does not exist
+LINE 4:     s.latitude,
+            ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column s.latitude does not exist
+LINE 4:     s.latitude,
+            ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column s.latitude does not exist
+LINE 4:     s.latitude,
+            ^
+
+2026-03-12 10:15:42,741 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:46,101 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:46,108 - INFO - __main__ - DEMO SAFEGUARD: query_inspection_data scoped to org 06f64dce-6fde-4a49-bba8-ed9a22498516
+2026-03-12 10:15:46,666 - ERROR - __main__ - Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:15:46,666 - ERROR - __main__ - Error in query_inspection_data: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1087, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:15:51,231 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:51,233 - INFO - __main__ - Executing query: Find all towers/sites with safety climb related deficiencies
+2026-03-12 10:15:51,233 - INFO - __main__ - SQL: SELECT DISTINCT 
+    s.name as site_name,
+    s.id as site_id,
+    s.location,
+    d.name as deficiency_name,
+    d.description as deficiency_description,
+    d.severity,
+    d."deficiencyCode",
+    d."deficiencyLocation",
+    sv."siteVisitDate" as survey_date,
+    sv.name as survey_name
+FROM deficiency d
+JOIN survey sv ON d."surveyId" = sv.id
+JOIN site_visit svi ON sv."siteVisitId" = svi.id
+JOIN site s ON svi."siteId" = s.id
+WHERE d."organizationId" = %s 
+    AND (LOWER(d.name) LIKE %s 
+         OR LOWER(d.description) LIKE %s 
+         OR LOWER(d."deficiencyCode") LIKE %s
+         OR LOWER(d."deficiencyLocation") LIKE %s)
+ORDER BY s.name, sv."siteVisitDate" DESC
+2026-03-12 10:15:51,233 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516', '%safety climb%', '%safety climb%', '%safety climb%', '%safety climb%')
+2026-03-12 10:15:57,505 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:15:57,513 - INFO - __main__ - Executing query: Count summary of towers with safety climb deficiencies
+2026-03-12 10:15:57,514 - INFO - __main__ - SQL: SELECT 
+    COUNT(DISTINCT s.id) as total_towers_with_safety_climb_issues,
+    COUNT(d.id) as total_safety_climb_deficiencies,
+    COUNT(CASE WHEN d.severity = '1' THEN 1 END) as severity_1_count,
+    COUNT(CASE WHEN d.severity = '2' THEN 1 END) as severity_2_count,
+    COUNT(CASE WHEN d.severity = '3' THEN 1 END) as severity_3_count
+FROM deficiency d
+JOIN survey sv ON d."surveyId" = sv.id
+JOIN site_visit svi ON sv."siteVisitId" = svi.id
+JOIN site s ON svi."siteId" = s.id
+WHERE d."organizationId" = %s 
+    AND (LOWER(d.name) LIKE %s 
+         OR LOWER(d.description) LIKE %s 
+         OR LOWER(d."deficiencyCode") LIKE %s
+         OR LOWER(d."deficiencyLocation") LIKE %s)
+2026-03-12 10:15:57,515 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516', '%safety climb%', '%safety climb%', '%safety climb%', '%safety climb%')
+2026-03-12 10:29:29,683 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:29,688 - INFO - __main__ - DEMO SAFEGUARD: query_inspection_data scoped to org 06f64dce-6fde-4a49-bba8-ed9a22498516
+2026-03-12 10:29:30,257 - ERROR - __main__ - Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:29:30,257 - ERROR - __main__ - Error in query_inspection_data: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1087, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:29:34,288 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:34,291 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' in name or description for FieldSync organization
+2026-03-12 10:29:34,291 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_deficiency_count
+FROM deficiency d
+JOIN survey sv ON d."surveyId" = sv.id
+JOIN organization o ON sv."organizationId" = o.id
+WHERE o.id = %s
+AND (LOWER(d.name) LIKE LOWER('%ungrounded%') OR LOWER(d.description) LIKE LOWER('%ungrounded%'))
+2026-03-12 10:29:34,291 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:29:34,675 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:29:34,675 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:29:36,337 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:37,975 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:41,283 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:41,285 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' in name, description, or notes for FieldSync organization
+2026-03-12 10:29:41,286 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_deficiency_count
+FROM deficiency 
+WHERE organizationId = %s
+AND (LOWER(name) LIKE LOWER('%ungrounded%') OR LOWER(description) LIKE LOWER('%ungrounded%') OR LOWER(notes) LIKE LOWER('%ungrounded%'))
+2026-03-12 10:29:41,286 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:29:41,696 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:29:41,696 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:29:44,713 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:44,715 - INFO - __main__ - Executing query: Count total deficiencies for FieldSync organization
+2026-03-12 10:29:44,715 - INFO - __main__ - SQL: SELECT COUNT(*) FROM deficiency WHERE "organizationId" = %s
+2026-03-12 10:29:44,716 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:29:49,009 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:49,011 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' in name, description, or notes for FieldSync organization
+2026-03-12 10:29:49,011 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_deficiency_count
+FROM deficiency 
+WHERE "organizationId" = %s
+AND (LOWER("name") LIKE '%ungrounded%' OR LOWER("description") LIKE '%ungrounded%' OR LOWER("notes") LIKE '%ungrounded%')
+2026-03-12 10:29:49,011 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:29:49,495 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:29:49,496 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:29:52,331 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:52,333 - WARNING - __main__ - DEMO SAFEGUARD: execute_query rejected — DEMO_ORG_ID '06f64dce-6fde-4a49-bba8-ed9a22498516' not found in params ()
+2026-03-12 10:29:54,891 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:54,895 - INFO - __main__ - DEMO SAFEGUARD: query_inspection_data scoped to org 06f64dce-6fde-4a49-bba8-ed9a22498516
+2026-03-12 10:29:55,491 - ERROR - __main__ - Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:29:55,492 - ERROR - __main__ - Error in query_inspection_data: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 1087, in call_tool
+    results_data['deficiency'] = db.execute_query(query, tuple(params))
+                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column sv.siteId does not exist
+LINE 14:                         LEFT JOIN site s ON sv."siteId" = s....
+                                                     ^
+
+2026-03-12 10:29:59,491 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:29:59,497 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' in name, description, or notes for FieldSync organization
+2026-03-12 10:29:59,498 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_count
+FROM deficiency 
+WHERE "organizationId"::text = %s
+  AND (
+    LOWER(COALESCE("name", '')) LIKE '%ungrounded%' OR 
+    LOWER(COALESCE("description", '')) LIKE '%ungrounded%' OR 
+    LOWER(COALESCE("notes", '')) LIKE '%ungrounded%'
+  )
+2026-03-12 10:29:59,498 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:29:59,937 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:29:59,938 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:30:02,884 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:30:02,887 - INFO - __main__ - Executing query: Sample deficiency records to understand data structure
+2026-03-12 10:30:02,887 - INFO - __main__ - SQL: SELECT "name", "description", "notes" 
+FROM deficiency 
+WHERE "organizationId" = %s 
+LIMIT 5
+2026-03-12 10:30:02,888 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:30:06,615 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:30:06,617 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' keyword
+2026-03-12 10:30:06,617 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_count
+FROM deficiency 
+WHERE "organizationId" = %s
+  AND (
+    LOWER("name") LIKE '%ungrounded%' OR 
+    LOWER("description") LIKE '%ungrounded%' OR 
+    LOWER("notes") LIKE '%ungrounded%'
+  )
+2026-03-12 10:30:06,617 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:30:07,047 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:30:07,047 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:30:10,030 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:30:10,037 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' keyword using ILIKE for case-insensitive search
+2026-03-12 10:30:10,038 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_count
+FROM deficiency 
+WHERE "organizationId" = %s
+  AND (
+    "name" ILIKE '%ungrounded%' OR 
+    "description" ILIKE '%ungrounded%' OR 
+    "notes" ILIKE '%ungrounded%'
+  )
+2026-03-12 10:30:10,038 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:30:10,517 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:30:10,518 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:30:13,362 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:30:13,364 - INFO - __main__ - Executing query: Get all deficiency records to search for ungrounded issues
+2026-03-12 10:30:13,364 - INFO - __main__ - SQL: SELECT "name", "description", "notes" 
+FROM deficiency 
+WHERE "organizationId" = %s
+2026-03-12 10:30:13,364 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:30:18,316 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:30:18,317 - INFO - __main__ - Executing query: Count deficiencies containing 'ungrounded' in any text field using concatenated search
+2026-03-12 10:30:18,318 - INFO - __main__ - SQL: SELECT COUNT(*) as ungrounded_count
+FROM deficiency 
+WHERE "organizationId" = %s
+  AND LOWER(CONCAT(COALESCE("name", ''), ' ', COALESCE("description", ''), ' ', COALESCE("notes", ''))) LIKE '%ungrounded%'
+2026-03-12 10:30:18,318 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:30:18,832 - ERROR - __main__ - Database error: tuple index out of range
+2026-03-12 10:30:18,833 - ERROR - __main__ - Error in execute_query: Database error: tuple index out of range
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: tuple index out of range
+2026-03-12 10:33:24,988 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:33:27,340 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:33:31,503 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:33:31,505 - INFO - __main__ - Executing query: Get all appurtenances in the FieldSync organization with their associated structure information
+2026-03-12 10:33:31,505 - INFO - __main__ - SQL: SELECT 
+    a.id,
+    a.name,
+    a.elevation,
+    a.notes,
+    a.createdAt,
+    a.editedAt,
+    s.name as structure_name,
+    s.id as structure_id
+FROM appurtenance a
+LEFT JOIN structure s ON a.structureId = s.id
+WHERE a.organizationId = %s
+ORDER BY a.createdAt DESC
+2026-03-12 10:33:31,506 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:33:32,052 - ERROR - __main__ - Database error: column a.structureid does not exist
+LINE 11: LEFT JOIN structure s ON a.structureId = s.id
+                                  ^
+HINT:  Perhaps you meant to reference the column "a.structureId".
+
+2026-03-12 10:33:32,052 - ERROR - __main__ - Error in execute_query: Database error: column a.structureid does not exist
+LINE 11: LEFT JOIN structure s ON a.structureId = s.id
+                                  ^
+HINT:  Perhaps you meant to reference the column "a.structureId".
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 336, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\LucyKien\mcp_testing\.venv\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column a.structureid does not exist
+LINE 11: LEFT JOIN structure s ON a.structureId = s.id
+                                  ^
+HINT:  Perhaps you meant to reference the column "a.structureId".
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 762, in call_tool
+    results = db.execute_query(query, params)
+  File "C:\Users\LucyKien\mcp_testing\mcp_server.py", line 350, in execute_query
+    raise Exception(f"Database error: {str(e)}")
+Exception: Database error: column a.structureid does not exist
+LINE 11: LEFT JOIN structure s ON a.structureId = s.id
+                                  ^
+HINT:  Perhaps you meant to reference the column "a.structureId".
+
+2026-03-12 10:33:35,246 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:33:35,247 - INFO - __main__ - Executing query: Get all appurtenances in the FieldSync organization with their associated structure information
+2026-03-12 10:33:35,247 - INFO - __main__ - SQL: SELECT 
+    a.id,
+    a.name,
+    a.elevation,
+    a.notes,
+    a."createdAt",
+    a."editedAt",
+    s.name as structure_name,
+    s.id as structure_id
+FROM appurtenance a
+LEFT JOIN structure s ON a."structureId" = s.id
+WHERE a."organizationId" = %s
+ORDER BY a."createdAt" DESC
+2026-03-12 10:33:35,248 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:33:39,306 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:33:39,309 - INFO - __main__ - Executing query: Get summary statistics for appurtenances in the FieldSync organization
+2026-03-12 10:33:39,309 - INFO - __main__ - SQL: SELECT 
+    COUNT(*) as total_appurtenances,
+    COUNT(DISTINCT a."structureId") as structures_with_appurtenances,
+    AVG(a.elevation) as avg_elevation,
+    MIN(a.elevation) as min_elevation,
+    MAX(a.elevation) as max_elevation
+FROM appurtenance a
+WHERE a."organizationId" = %s
+2026-03-12 10:33:39,310 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516',)
+2026-03-12 10:33:51,200 - INFO - mcp.server.lowlevel.server - Processing request of type CallToolRequest
+2026-03-12 10:33:51,202 - INFO - __main__ - Executing query: Get counts of different types of components associated with appurtenances
+2026-03-12 10:33:51,202 - INFO - __main__ - SQL: WITH appurtenance_components AS (
+    SELECT 'Lightning Protection' as component_type, COUNT(*) as count
+    FROM lightning_protection lp
+    JOIN appurtenance a ON lp."appurtenanceId" = a.id
+    WHERE a."organizationId" = %s
+    
+    UNION ALL
+    
+    SELECT 'Light Assembly' as component_type, COUNT(*) as count
+    FROM light_assembly la
+    JOIN appurtenance a ON la."appurtenanceId" = a.id
+    WHERE a."organizationId" = %s
+    
+    UNION ALL
+    
+    SELECT 'AM Skirt' as component_type, COUNT(*) as count
+    FROM am_skirt ams
+    JOIN appurtenance a ON ams."appurtenanceId" = a.id
+    WHERE a."organizationId" = %s
+    
+    UNION ALL
+    
+    SELECT 'Mount Centerline' as component_type, COUNT(*) as count
+    FROM mount_centerline mc
+    JOIN appurtenance a ON mc."appurtenanceId" = a.id
+    WHERE a."organizationId" = %s
+    
+    UNION ALL
+    
+    SELECT 'Waveguide' as component_type, COUNT(*) as count
+    FROM waveguide w
+    JOIN appurtenance a ON w."appurtenanceId" = a.id
+    WHERE a."organizationId" = %s
+    
+    UNION ALL
+    
+    SELECT 'Other Appurtenance' as component_type, COUNT(*) as count
+    FROM other_appurtenance oa
+    JOIN appurtenance a ON oa."appurtenanceId" = a.id
+    WHERE a."organizationId" = %s
+)
+SELECT component_type, count
+FROM appurtenance_components
+WHERE count > 0
+ORDER BY count DESC
+2026-03-12 10:33:51,202 - INFO - __main__ - Params: ('06f64dce-6fde-4a49-bba8-ed9a22498516', '06f64dce-6fde-4a49-bba8-ed9a22498516', '06f64dce-6fde-4a49-bba8-ed9a22498516', '06f64dce-6fde-4a49-bba8-ed9a22498516', '06f64dce-6fde-4a49-bba8-ed9a22498516', '06f64dce-6fde-4a49-bba8-ed9a22498516')

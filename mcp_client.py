@@ -16,6 +16,24 @@ load_dotenv()
 
 ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 
+# Demo org scope — must match DEMO_ORG_ID / DEMO_ORG_NAME in the server's .env
+DEMO_ORG_ID   = os.getenv("DEMO_ORG_ID", "XYZ")
+DEMO_ORG_NAME = os.getenv("DEMO_ORG_NAME", "Everest")
+
+# System prompt enforces org scope at the LLM layer
+SYSTEM_PROMPT = f"""You are a data analytics assistant for the {DEMO_ORG_NAME} organization.
+
+CRITICAL RULES — follow these without exception:
+1. You may ONLY query, analyse, or report data that belongs to the {DEMO_ORG_NAME} organization (org ID: {DEMO_ORG_ID}).
+2. Every call to execute_query MUST include "{DEMO_ORG_ID}" in the params list and filter the query by organizationId = %s (or an equivalent join). Never omit this filter.
+3. You must NEVER suggest, write, or execute any INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER, CREATE, or any other write/DDL statement.
+4. If a user asks about data outside the {DEMO_ORG_NAME} organization, politely decline and explain you can only access {DEMO_ORG_NAME} data.
+5. Do not expose raw database credentials, internal UUIDs beyond what is needed to answer the question, or any personal data fields not relevant to the question.
+
+You have access to tools for schema exploration, custom SQL queries, inspection data, geographic queries, compliance reporting, and weather data — all scoped to {DEMO_ORG_NAME}.
+
+When a user asks about specific types of deficiencies by keyword (e.g. "rust", "antenna", "cable", "loose bolt", "corrosion"), always use query_inspection_data with data_type="deficiency" and pass the keyword as the search_term parameter — do not use execute_query for deficiency keyword searches."""
+
 # Token management constants
 MAX_TOOL_RESULT_CHARS = 3000
 MAX_MESSAGES_HISTORY = 15
@@ -152,14 +170,15 @@ class MCPClient:
         # DYNAMIC TOOL SELECTION - Only send relevant tools
         relevant_tools = select_relevant_tools(query, self.all_tools)
         
-        print(f"\n📊 Total available tools: {len(self.all_tools)}")
-        print(f"📊 Selected relevant tools: {len(relevant_tools)}")
-        print(f"📊 Tools selected: {[t['name'] for t in relevant_tools]}")
+        print(f"\nTotal available tools: {len(self.all_tools)}")
+        print(f"Selected relevant tools: {len(relevant_tools)}")
+        print(f"Tools selected: {[t['name'] for t in relevant_tools]}")
         
             # Initial Claude API call with only relevant tools
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4000,
+            system=SYSTEM_PROMPT,
             messages=messages,
             tools=relevant_tools  # Only send relevant tools!
         )
@@ -168,8 +187,8 @@ class MCPClient:
         total_input_tokens = response.usage.input_tokens
         total_output_tokens = response.usage.output_tokens
 
-        print(f"📊 Initial input tokens: {response.usage.input_tokens}")
-        print(f"📊 Initial output tokens: {response.usage.output_tokens}")
+        print(f"Initial input tokens: {response.usage.input_tokens}")
+        print(f"Initial output tokens: {response.usage.output_tokens}")
 
         # Track conversation and tool calls
         tools_used = []
@@ -181,7 +200,7 @@ class MCPClient:
 
             # Safety: stop if too many tool calls
             if tool_call_count > MAX_TOTAL_TOOL_CALLS:
-                print(f"⚠️  Stopping after {MAX_TOTAL_TOOL_CALLS} tool calls")
+                print(f"Stopping after {MAX_TOTAL_TOOL_CALLS} tool calls")
                 # Add a message explaining we hit the limit
                 final_text = "I've reached the maximum number of tool calls for this query. "
                 final_text += f"Based on {tool_call_count} tool executions, here's what I found: "
@@ -212,7 +231,7 @@ class MCPClient:
                         "arguments": tool_args
                     })
 
-                    print(f"\n🔧 Calling tool #{tool_call_count}: {tool_name}")
+                    print(f"\nCalling tool #{tool_call_count}: {tool_name}")
 
                     try:
                         # Execute tool via MCP
@@ -229,7 +248,7 @@ class MCPClient:
                         result_text = truncate_tool_result(result_text)
                         
                         if len(result_text) < original_length:
-                            print(f"   ✂️  Truncated result from {original_length} to {len(result_text)} chars")
+                            print(f"   Truncated result from {original_length} to {len(result_text)} chars")
 
                         tool_results.append({
                             "type": "tool_result",
@@ -237,7 +256,7 @@ class MCPClient:
                             "content": result_text
                         })
                     except Exception as e:
-                        print(f"   ❌ Tool execution failed: {str(e)}")
+                        print(f"   Tool execution failed: {str(e)}")
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": content_block.id,
@@ -253,19 +272,20 @@ class MCPClient:
             # Trim message history if too long
             if len(messages) > MAX_MESSAGES_HISTORY:
                 messages = [messages[0]] + messages[-(MAX_MESSAGES_HISTORY-1):]
-                print(f"✂️  Trimmed message history to {len(messages)} messages")
+                print(f"Trimmed message history to {len(messages)} messages")
 
             # Get next response from Claude (still with only relevant tools)
             response = self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
                 max_tokens=4000,
+                system=SYSTEM_PROMPT,
                 messages=messages,
                 tools=relevant_tools  # Keep using same relevant tools
             )
 
             total_input_tokens += response.usage.input_tokens
             total_output_tokens += response.usage.output_tokens
-            print(f"📊 Cumulative tokens - Input: {total_input_tokens}, Output: {total_output_tokens}")
+            print(f"Cumulative tokens - Input: {total_input_tokens}, Output: {total_output_tokens}")
 
         # Extract final text response
         final_text = ""
@@ -273,8 +293,8 @@ class MCPClient:
             if content_block.type == "text":
                 final_text += content_block.text
 
-        print(f"\n✅ COMPLETE - Total Input: {total_input_tokens}, Output: {total_output_tokens}")
-        print(f"✅ Tool calls made: {tool_call_count}")
+        print(f"\nCOMPLETE - Total Input: {total_input_tokens}, Output: {total_output_tokens}")
+        print(f"Tool calls made: {tool_call_count}")
 
         return {
             "response": final_text,
@@ -384,12 +404,7 @@ def disconnect():
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🚀 MCP Web Interface Starting...")
+    print("FieldSync Analytics - Starting...")
     print("="*60)
-    print("\n📍 Open your browser to: http://localhost:5000")
-    print("\n💡 Features:")
-    print("  - Dynamic tool selection (reduced token usage)")
-    print("  - Automatic result truncation")
-    print("  - Token usage monitoring")
-    print("  - Tool call limits\n")
+    print("\nOpen your browser to: http://localhost:5000\n")
     app.run(debug=True, port=5000, use_reloader=False)

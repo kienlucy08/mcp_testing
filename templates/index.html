@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCP Client Interface</title>
+    <title>FieldSync Analytics</title>
     <style>
         * {
             margin: 0;
@@ -184,22 +184,71 @@
         .tool-usage {
             background: #fef3c7;
             border-left: 4px solid #f59e0b;
-            padding: 10px 15px;
+            padding: 0;
             margin: 10px 0;
             border-radius: 4px;
             font-size: 0.9rem;
+            overflow: hidden;
         }
 
         .tool-usage-title {
             font-weight: 600;
             color: #92400e;
-            margin-bottom: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .tool-usage-title:hover {
+            background: #fde68a;
+        }
+
+        .tool-usage-chevron {
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+            margin-left: 8px;
+        }
+
+        .tool-usage.collapsed .tool-usage-chevron {
+            transform: rotate(-90deg);
         }
 
         .tool-usage-details {
             color: #78350f;
             font-family: 'Courier New', monospace;
             font-size: 0.85rem;
+            padding: 4px 12px 10px;
+            border-top: 1px solid #fcd34d;
+        }
+
+        .tool-usage.collapsed .tool-usage-details {
+            display: none;
+        }
+
+        .button-toggle {
+            background: transparent;
+            color: #6b7280;
+            border: 1.5px solid #d1d5db;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .button-toggle:hover {
+            background: #f3f4f6;
+            box-shadow: none;
+            transform: none;
+            color: #374151;
+            border-color: #9ca3af;
+        }
+
+        .button-toggle.active {
+            color: #4f46e5;
+            border-color: #818cf8;
+            background: #eef2ff;
         }
 
         .loading {
@@ -228,6 +277,34 @@
             100% { transform: rotate(360deg); }
         }
 
+        .elapsed-timer {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-top: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .query-hint {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .query-time-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 2px 9px;
+            margin-left: 8px;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+
         .error {
             background: #fee2e2;
             border: 1px solid #ef4444;
@@ -253,25 +330,48 @@
             margin-top: 15px;
         }
 
+        .example-category {
+            margin-top: 14px;
+            margin-bottom: 4px;
+        }
+
+        .example-category:first-child {
+            margin-top: 10px;
+        }
+
+        .example-category-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #6b7280;
+            padding: 0 2px;
+        }
+
         .example-query {
             background: white;
             padding: 8px 12px;
-            margin: 5px 0;
+            margin: 4px 0;
             border-radius: 4px;
             cursor: pointer;
             transition: background 0.2s;
+            font-size: 0.95rem;
+            color: #374151;
+            border-left: 3px solid transparent;
         }
 
         .example-query:hover {
-            background: #e5e7eb;
+            background: #e0e7ff;
+            border-left-color: #667eea;
+            color: #1e40af;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Tower Analytics MCP</h1>
-            <p>Model Context Protocol Testing Dashboard</p>
+            <h1>FieldSync Analytics</h1>
+            <p>Conversational Tower Infrastructure Intelligence</p>
             <span id="statusBadge" class="status-badge status-disconnected">Disconnected</span>
         </div>
 
@@ -299,42 +399,55 @@
             <div class="input-group">
                 <label for="queryInput">Your Query:</label>
                 <textarea id="queryInput" placeholder="Ask a question about your tower data..."></textarea>
+                <div class="query-hint">Tip: the more specific your question, the faster and more accurate the answer. Include tower type, date range, or site name when relevant.</div>
             </div>
             <button id="sendBtn" onclick="sendQuery()" disabled>Send Query</button>
             <button class="button-secondary" onclick="clearChat()">Clear Chat</button>
+            <button class="button-toggle" id="queryToggleBtn" onclick="toggleQueryDetails()" title="Show or hide how Claude looked up the answer">Show Query Details</button>
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>Processing your query...</p>
+                <div class="elapsed-timer" id="elapsedTimer">0.0s</div>
             </div>
 
             <div class="example-queries">
-                <strong>Example Queries (click to use):</strong>
-                <div class="example-query" onclick="useExample(this)">
-                    How many towers are in FieldSync Organization?
+                <strong>Example Queries — click to use:</strong>
+
+                <div class="example-category">
+                    <div class="example-category-label">Inspection Compliance</div>
+                    <div class="example-query" onclick="useExample(this)">Which towers need TIA inspection?</div>
+                    <div class="example-query" onclick="useExample(this)">How many towers have never been inspected?</div>
+                    <div class="example-query" onclick="useExample(this)">Show me all guyed towers that are overdue for inspection.</div>
+                    <div class="example-query" onclick="useExample(this)">Which sites have the most overdue structures?</div>
                 </div>
-                <div class="example-query" onclick="useExample(this)">
-                    What are the most common deficiencies in FieldSync Organization?
+
+                <div class="example-category">
+                    <div class="example-category-label">Deficiency Analysis</div>
+                    <div class="example-query" onclick="useExample(this)">What are the most common deficiencies?</div>
+                    <div class="example-query" onclick="useExample(this)">Find all deficiencies related to rust.</div>
+                    <div class="example-query" onclick="useExample(this)">What severity-1 deficiencies were logged in the last 6 months?</div>
+                    <div class="example-query" onclick="useExample(this)">Which sites have the highest number of open deficiencies?</div>
+                    <div class="example-query" onclick="useExample(this)">Compare deficiency rates across different tower types (monopole, guyed, and self-support).</div>
                 </div>
-                <div class="example-query" onclick="useExample(this)">
-                    What's the average height of guyed towers across organziations?
+
+                <div class="example-category">
+                    <div class="example-category-label">Tower Inventory</div>
+                    <div class="example-query" onclick="useExample(this)">How many total towers does the organization have?</div>
+                    <div class="example-query" onclick="useExample(this)">Show me the top 10 tallest structures.</div>
+                    <div class="example-query" onclick="useExample(this)">What is the breakdown of tower types (guyed vs monopole vs self-support)?</div>
+                    <div class="example-query" onclick="useExample(this)">Which sites have structures over 500 feet tall?</div>
                 </div>
-                <div class="example-query" onclick="useExample(this)">
-                    Show me the top ten tallest structures in FieldSync organization
+
+                <div class="example-category">
+                    <div class="example-category-label">Geographic</div>
+                    <div class="example-query" onclick="useExample(this)">Find all sites within 50 miles of site 7b9dbd13-92b9-4aca-b38e-ade56097ecbf.</div>
+                    <div class="example-query" onclick="useExample(this)">What sites are in Texas?</div>
                 </div>
-                <div class="example-query" onclick="useExample(this)">
-                    Show me all towers with safety climb deficiencies
-                </div>
-                <div class="example-query" onclick="useExample(this)">
-                    Get weather for site 1a7fbff1-5b9d-4c6d-9984-11f31811ec12
-                </div>
-                <div class="example-query" onclick="useExample(this)">
-                    Find all sites within 50 miles of site 7b9dbd13-92b9-4aca-b38e-ade56097ecbf
-                </div>
-                <div class="example-query" onclick="useExample(this)">
-                    Which towers need TIA inspection?
-                </div>
-                <div class="example-query" onclick="useExample(this)">
-                    Compare deficiency rates acorss different tower types (monopole, guyed and self-support)
+
+                <div class="example-category">
+                    <div class="example-category-label">Weather</div>
+                    <div class="example-query" onclick="useExample(this)">What is the weather at site 1a7fbff1-5b9d-4c6d-9984-11f31811ec12? Any extreme conditions?</div>
+                    <div class="example-query" onclick="useExample(this)">Show the 5-day forecast for site 1a7fbff1-5b9d-4c6d-9984-11f31811ec12.</div>
                 </div>
             </div>
         </div>
@@ -424,6 +537,25 @@
             }
         }
 
+        let timerInterval = null;
+
+        function startTimer() {
+            const start = Date.now();
+            const timerEl = document.getElementById('elapsedTimer');
+            timerEl.textContent = '0.0s';
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - start) / 1000;
+                timerEl.textContent = elapsed.toFixed(1) + 's';
+            }, 100);
+            return start;
+        }
+
+        function stopTimer(start) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            return ((Date.now() - start) / 1000).toFixed(1);
+        }
+
         async function sendQuery() {
             const queryInput = document.getElementById('queryInput');
             const query = queryInput.value.trim();
@@ -441,6 +573,7 @@
 
             sendBtn.disabled = true;
             loading.classList.add('active');
+            const queryStart = startTimer();
 
             try {
                 const response = await fetch('/query', {
@@ -450,23 +583,22 @@
                 });
 
                 const data = await response.json();
+                const totalTime = stopTimer(queryStart);
 
                 if (data.success) {
-                    // Show tools used
                     if (data.tools_used && data.tools_used.length > 0) {
                         addToolUsage(data.tools_used, chatContainer);
                     }
-                    
-                    // Show response
-                    addMessage('assistant', data.response, chatContainer);
+                    addMessage('assistant', data.response, chatContainer, totalTime);
                 } else {
-                    addMessage('assistant', 'Error: ' + (data.error || 'Unknown error'), chatContainer);
+                    addMessage('assistant', 'Error: ' + (data.error || 'Unknown error'), chatContainer, totalTime);
                     if (data.details) {
                         console.error('Query details:', data.details);
                     }
                 }
             } catch (error) {
-                addMessage('assistant', 'Error: ' + error.message, chatContainer);
+                const totalTime = stopTimer(queryStart);
+                addMessage('assistant', 'Error: ' + error.message, chatContainer, totalTime);
             } finally {
                 sendBtn.disabled = false;
                 loading.classList.remove('active');
@@ -474,40 +606,76 @@
             }
         }
 
-        function addMessage(role, content, container) {
+        function addMessage(role, content, container, totalTime) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message message-${role}`;
-            
+
             const label = document.createElement('div');
             label.className = 'message-label';
             label.textContent = role === 'user' ? 'You' : 'Assistant';
-            
+
+            if (role === 'assistant' && totalTime !== undefined) {
+                const badge = document.createElement('span');
+                badge.className = 'query-time-badge';
+                badge.textContent = totalTime + 's';
+                label.appendChild(badge);
+            }
+
             const text = document.createElement('div');
             text.textContent = content;
             text.style.whiteSpace = 'pre-wrap';
-            
+
             messageDiv.appendChild(label);
             messageDiv.appendChild(text);
             container.appendChild(messageDiv);
         }
 
+        // Track whether query details are globally visible
+        let queryDetailsVisible = false;
+
+        function toggleQueryDetails() {
+            queryDetailsVisible = !queryDetailsVisible;
+            const btn = document.getElementById('queryToggleBtn');
+            btn.textContent = queryDetailsVisible ? 'Hide Query Details' : 'Show Query Details';
+            btn.classList.toggle('active', queryDetailsVisible);
+            document.querySelectorAll('.tool-usage').forEach(el => {
+                el.classList.toggle('collapsed', !queryDetailsVisible);
+            });
+        }
+
         function addToolUsage(tools, container) {
             const toolDiv = document.createElement('div');
-            toolDiv.className = 'tool-usage';
-            
+            // Respect current global toggle — hidden by default
+            toolDiv.className = 'tool-usage' + (queryDetailsVisible ? '' : ' collapsed');
+
             const title = document.createElement('div');
             title.className = 'tool-usage-title';
-            title.textContent = 'Tools Used:';
-            
+
+            const label = document.createElement('span');
+            label.textContent = `Query Details (${tools.length} step${tools.length !== 1 ? 's' : ''})`;
+
+            const chevron = document.createElement('span');
+            chevron.className = 'tool-usage-chevron';
+            chevron.textContent = '▼';
+
+            title.appendChild(label);
+            title.appendChild(chevron);
+
+            // Click the header to expand/collapse this individual block
+            title.addEventListener('click', () => {
+                toolDiv.classList.toggle('collapsed');
+            });
+
             const details = document.createElement('div');
             details.className = 'tool-usage-details';
-            
-            tools.forEach(tool => {
+
+            tools.forEach((tool, i) => {
                 const toolLine = document.createElement('div');
-                toolLine.textContent = `• ${tool.name}(${JSON.stringify(tool.arguments)})`;
+                toolLine.style.marginBottom = '4px';
+                toolLine.textContent = `${i + 1}. ${tool.name}(${JSON.stringify(tool.arguments)})`;
                 details.appendChild(toolLine);
             });
-            
+
             toolDiv.appendChild(title);
             toolDiv.appendChild(details);
             container.appendChild(toolDiv);

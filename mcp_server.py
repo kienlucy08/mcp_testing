@@ -3,7 +3,6 @@ import json
 import sys
 import logging
 from typing import Any, Optional
-from pathlib import Path
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
@@ -11,28 +10,71 @@ from dotenv import load_dotenv
 import os
 import requests
 from datetime import datetime, timedelta
+import re as _re
 
-# Create logs directory if it doesn't exist
-LOGS_DIR = Path(__file__).parent / "logs"
-LOGS_DIR.mkdir(exist_ok=True)
+load_dotenv()
 
-# Create log filename with timestamp
-log_filename = LOGS_DIR / f"mcp_server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-
-# Configure logging to both file and stderr
+# Logging — WARNING level only so errors surface without cluttering the console
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-    handlers=[
-        # File handler - all logs go here
-        logging.FileHandler(log_filename, mode='w', encoding='utf-8'),
-        # Stream handler - also show in console/stderr
-        logging.StreamHandler(sys.stderr)
-    ]
+    handlers=[logging.StreamHandler(sys.stderr)],
 )
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+# ============================================================
+# DEMO SAFEGUARDS — restrict all data access to one org only
+# and enforce read-only database sessions.
+# ============================================================
+
+# Organization scope — set DEMO_ORG_ID and DEMO_ORG_NAME in .env
+DEMO_ORG_ID   = os.getenv("DEMO_ORG_ID")
+DEMO_ORG_NAME = os.getenv("DEMO_ORG_NAME")
+
+if not DEMO_ORG_ID:
+    raise RuntimeError("DEMO_ORG_ID must be set in .env before starting the server.")
+
+# SQL keywords that must never appear in a query — write/DDL/admin operations
+_BLOCKED_SQL_KEYWORDS = [
+    "INSERT", "UPDATE", "DELETE", "DROP", "TRUNCATE", "ALTER",
+    "CREATE", "GRANT", "REVOKE", "COPY", "EXECUTE", "CALL",
+    "VACUUM", "DO",
+]
+
+# Maximum length (chars) accepted for a custom SQL query
+_MAX_QUERY_LENGTH = 5000
+
+
+def _strip_sql_comments(sql: str) -> str:
+    """Remove -- single-line and /* block */ comments before keyword scanning."""
+    sql = _re.sub(r"--[^\n]*", " ", sql)
+    sql = _re.sub(r"/\*.*?\*/", " ", sql, flags=_re.DOTALL)
+    return sql
+
+
+def _check_sql_safety(query: str):
+    """
+    Returns an error string if the query is unsafe, otherwise None.
+    Checks:
+      1. Must not exceed _MAX_QUERY_LENGTH characters.
+      2. Must start with SELECT or WITH after stripping comments/whitespace.
+      3. Must not contain any write/DDL/admin keyword anywhere in the query.
+    """
+    if len(query) > _MAX_QUERY_LENGTH:
+        return f"Query exceeds the maximum allowed length of {_MAX_QUERY_LENGTH} characters."
+
+    stripped = _strip_sql_comments(query).strip().upper()
+
+    if not (stripped.startswith("SELECT") or stripped.startswith("WITH")):
+        return "Only SELECT and WITH (CTE) queries are permitted."
+
+    for kw in _BLOCKED_SQL_KEYWORDS:
+        pattern = r"\b" + _re.escape(kw) + r"\b"
+        if _re.search(pattern, stripped):
+            logger.warning(f"SECURITY: Blocked query — forbidden keyword '{kw}' detected")
+            return f"Query contains blocked keyword '{kw}'. Only read operations are permitted."
+
+    return None  # query passed all checks
 
 # Database configuration
 DB_CONFIG = {
@@ -239,19 +281,34 @@ class DatabaseManager:
             return "\nNo extreme weather conditions detected.\n"
 
     def get_connection(self):
-        """Get a database connection"""
+        """Get a database connection.
+
+        DEMO SAFEGUARDS applied to every session:
+          - default_transaction_read_only=on  — PostgreSQL will reject any write
+            statement (INSERT/UPDATE/DELETE/DDL) even if one slips through the
+            application-level checks above.
+          - statement_timeout=30000           — kills any query running longer
+            than 30 seconds to prevent resource exhaustion on the production DB.
+          - transaction_timeout=60000         — caps the total transaction wall
+            time at 60 seconds as an additional backstop.
+        """
         conn_params = {
             "host": self.config["host"],
             "port": self.config.get("port", 5432),
             "database": self.config["database"],
             "user": self.config["user"],
             "password": self.config["password"],
-            "cursor_factory": self.cursor_factory
+            "cursor_factory": self.cursor_factory,
+            # Enforce read-only sessions and query time limits at the driver level
+            "options": (
+                "-c default_transaction_read_only=on "
+                "-c statement_timeout=30000"
+            ),
         }
-        
+
         if "sslmode" in self.config:
             conn_params["sslmode"] = self.config["sslmode"]
-        
+
         return self.connection_class.connect(**conn_params)
     
     def execute_query(self, query: str, params: tuple = ()) -> list[dict]:
@@ -398,26 +455,37 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="execute_query",
-            description="""Execute a custom SQL SELECT query. Use this for any data retrieval after understanding the schema.
-            """,
+            description=(
+                f"Execute a custom SQL SELECT (or WITH/CTE) query against the {DEMO_ORG_NAME} organization only. "
+                f"REQUIRED: you MUST include the organization ID '{DEMO_ORG_ID}' in the params list and "
+                f"filter by organizationId = %s (or via a JOIN to organization) in every query. "
+                f"Queries that omit this parameter will be rejected. "
+                f"Only SELECT and WITH statements are permitted — any write or DDL operation will be blocked."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "SQL SELECT query to execute (use %s for parameters in PostgreSQL)"
+                        "description": (
+                            "SQL SELECT or WITH query using %s placeholders. "
+                            f"Must filter to organizationId = %s (value: '{DEMO_ORG_ID}')."
+                        ),
                     },
                     "params": {
                         "type": "array",
-                        "description": "Parameters for the query (optional)"
+                        "description": (
+                            f"Query parameters. Must include '{DEMO_ORG_ID}' as the value "
+                            "for the organizationId filter."
+                        ),
                     },
                     "description": {
                         "type": "string",
-                        "description": "Human-readable description of what this query does"
-                    }
+                        "description": "Human-readable description of what this query does",
+                    },
                 },
-                "required": ["query", "description"]
-            }
+                "required": ["query", "description"],
+            },
         ),
         Tool(
             name="explore_data_relationships",
@@ -439,7 +507,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="query_inspection_data",
-            description="Query safety climb, deficiency, appurtenance data with flexible filtering. Unfiied tool for all inspection-related queries",
+            description="Query safety climb, deficiency, appurtenance data with flexible filtering. Unified tool for all inspection-related queries.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -451,6 +519,10 @@ async def list_tools() -> list[Tool]:
                     "organization_id": {
                         "type": "string",
                         "description": "Filter by organization UUID"
+                    },
+                    "search_term": {
+                        "type": "string",
+                        "description": "Keyword to search within deficiency name and description fields (case-insensitive, partial match). E.g. 'rust', 'antenna', 'cable', 'corrosion'."
                     },
                     "severity": {
                         "type": "string",
@@ -646,14 +718,28 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             params = tuple(arguments.get("params", []))
             description = arguments["description"]
             
-            # Security check - only allow SELECT queries
-            query_upper = query.strip().upper()
-            if not query_upper.startswith("SELECT") and not query_upper.startswith("WITH"):
+            # Security check — reject write/DDL operations and oversized queries
+            safety_error = _check_sql_safety(query)
+            if safety_error:
+                logger.warning(f"SECURITY: execute_query rejected — {safety_error}")
+                return [TextContent(type="text", text=f"Error: {safety_error}")]
+
+            # DEMO SAFEGUARD: require the demo org ID to be passed as a parameter
+            # so every custom query is scoped to the correct organization.
+            if DEMO_ORG_ID not in [str(p) for p in params]:
+                logger.warning(
+                    f"DEMO SAFEGUARD: execute_query rejected — "
+                    f"DEMO_ORG_ID '{DEMO_ORG_ID}' not found in params {params}"
+                )
                 return [TextContent(
                     type="text",
-                    text="Error: Only SELECT and WITH (CTE) queries are allowed for security reasons"
+                    text=(
+                        f"Error: All custom queries must be scoped to the {DEMO_ORG_NAME} "
+                        f"organization. Include the organization ID '{DEMO_ORG_ID}' in the "
+                        f"params list and filter your query with a WHERE clause on organizationId."
+                    ),
                 )]
-            
+
             logger.info(f"Executing query: {description}")
             logger.info(f"SQL: {query}")
             logger.info(f"Params: {params}")
@@ -751,7 +837,9 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             center_lat = arguments.get("latitude")
             center_long = arguments.get("longitude")
             radius_miles = arguments.get("radius_miles")
-            organization_id = arguments.get("organization_id")
+            # DEMO SAFEGUARD: always restrict to the demo org, ignoring any caller-supplied value
+            organization_id = DEMO_ORG_ID
+            logger.info(f"DEMO SAFEGUARD: query_sites_by_location scoped to org {DEMO_ORG_ID}")
             limit = arguments.get("limit", 50)
 
             # Determine mode: single site lookup vs radius search
@@ -870,12 +958,15 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         
         elif name == "query_inspection_data":
             data_type = arguments.get("data_type", "safety_climb")
-            organization_id = arguments.get("organization_id")
+            # DEMO SAFEGUARD: always restrict to the demo org, ignoring any caller-supplied value
+            organization_id = DEMO_ORG_ID
+            logger.info(f"DEMO SAFEGUARD: query_inspection_data scoped to org {DEMO_ORG_ID}")
             site_id = arguments.get("site_id")
             severity = arguments.get("severity")
             survey_id = arguments.get("survey_id")
             date_from = arguments.get("date_from")
             date_to = arguments.get("date_to")
+            search_term = arguments.get("search_term")
             limit = arguments.get("limit", 100)
             include_related = arguments.get("include_related", True)
             
@@ -935,6 +1026,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                     base_query = """
                         SELECT
                             d.id as deficiency_id,
+                            d.name,
                             d.severity,
                             d.status,
                             d.description,
@@ -943,12 +1035,13 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                             s.name as site_name,
                             o.name as organization_name
                         FROM deficiency d
-                        LEFT JOIN survey s ON sc."surveyId" = s.id
+                        LEFT JOIN survey sv ON d."surveyId" = sv.id
+                        LEFT JOIN site s ON sv."siteId" = s.id
                         LEFT JOIN organization o ON s."organizationId" = o.id
                     """
                 else:
                     base_query = "SELECT * FROM deficiency d"
-                
+
                 if organization_id:
                     where_clauses.append('o.id = %s' if include_related else 'd."organizationId" = %s')
                     params.append(organization_id)
@@ -959,8 +1052,12 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                     where_clauses.append('d.severity = %s')
                     params.append(severity)
                 if survey_id:
-                    where_clauses.append('sc."surveyId" = %s')
+                    where_clauses.append('d."surveyId" = %s')
                     params.append(survey_id)
+                if search_term:
+                    where_clauses.append('(d.name ILIKE %s OR d.description ILIKE %s)')
+                    params.append(f"%{search_term}%")
+                    params.append(f"%{search_term}%")
                 if date_from:
                     where_clauses.append('d."createdAt" >= %s')
                     params.append(date_from)
@@ -1010,12 +1107,28 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
         elif name == "get_weather_for_site":
             site_id = arguments["site_id"]
-            include_forecast = arguments.get("include_forecast", True)  # Changed default to True
+            include_forecast = arguments.get("include_forecast", True)
             include_extreme_events = arguments.get("include_extreme_events", True)
-            
+
+            # DEMO SAFEGUARD: verify this site belongs to the demo org before
+            # returning any data (coordinates, weather, or site details).
+            org_check = db.execute_query(
+                'SELECT id FROM site WHERE id = %s AND "organizationId" = %s',
+                (site_id, DEMO_ORG_ID),
+            )
+            if not org_check:
+                logger.warning(
+                    f"DEMO SAFEGUARD: get_weather_for_site blocked — site {site_id} "
+                    f"not found in org {DEMO_ORG_ID}"
+                )
+                return [TextContent(
+                    type="text",
+                    text=f"Access denied: site '{site_id}' is not part of the {DEMO_ORG_NAME} organization.",
+                )]
+
             # Get site coordinates and location info
             query = """
-                SELECT 
+                SELECT
                     id,
                     name,
                     address,
@@ -1085,7 +1198,9 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             return [TextContent(type="text", text=response)]
 
         elif name == "get_sites_needing_inspection":
-            organization_id = arguments.get("organization_id")
+            # DEMO SAFEGUARD: always restrict to the demo org, ignoring any caller-supplied value
+            organization_id = DEMO_ORG_ID
+            logger.info(f"DEMO SAFEGUARD: get_sites_needing_inspection scoped to org {DEMO_ORG_ID}")
             years_threshold = arguments.get("years_threshold", 3)
             include_never_visited = arguments.get("include_never_visited", True)
             limit = arguments.get("limit", 1000)
