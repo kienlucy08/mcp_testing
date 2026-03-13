@@ -404,9 +404,9 @@
             <h2>Connect to MCP Server</h2>
             <div class="input-group">
                 <label for="serverPath">Server Script Path:</label>
-                <input type="text" id="serverPath" 
-                       placeholder="C:\Users\YourName\mcp_testing\mcp_server.py"
-                       value="C:\Users\LucyKien\mcp_testing\mcp_server.py">
+                <input type="text" id="serverPath"
+                       placeholder="Path to mcp_server.py"
+                       value="{{ default_server_path }}">
             </div>
             <button id="connectBtn" onclick="connectToServer()">Connect to Server</button>
             <button class="button-secondary" onclick="disconnect()" id="disconnectBtn" disabled>Disconnect</button>

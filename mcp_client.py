@@ -21,6 +21,9 @@ ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 DEMO_ORG_ID   = os.getenv("DEMO_ORG_ID", "XYZ")
 DEMO_ORG_NAME = os.getenv("DEMO_ORG_NAME", "Everest")
 
+# Auto-detect the server script path relative to this file
+DEFAULT_SERVER_PATH = str(Path(__file__).resolve().parent / "mcp_server.py")
+
 # System prompt enforces org scope at the LLM layer
 def build_system_prompt() -> str:
     today = date.today().strftime("%B %d, %Y")
@@ -377,7 +380,7 @@ def run_async(coro):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', default_server_path=DEFAULT_SERVER_PATH)
 
 @app.route('/connect', methods=['POST'])
 def connect():

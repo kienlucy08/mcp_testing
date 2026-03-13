@@ -106,6 +106,8 @@ python mcp_client.py
 
 Open your browser and go to **http://localhost:5000**
 
+The **Server Script Path** field is pre-populated automatically based on where you cloned the repo — no manual path editing required. Just click **Connect**.
+
 The first startup takes 1–3 minutes while the server caches the database schema. Subsequent tool calls are fast.
 
 ---
