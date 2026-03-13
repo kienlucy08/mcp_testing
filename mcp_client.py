@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, jsonify
 from threading import Thread
 import os
 import re
+from datetime import date
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
@@ -21,18 +22,50 @@ DEMO_ORG_ID   = os.getenv("DEMO_ORG_ID", "XYZ")
 DEMO_ORG_NAME = os.getenv("DEMO_ORG_NAME", "Everest")
 
 # System prompt enforces org scope at the LLM layer
-SYSTEM_PROMPT = f"""You are a data analytics assistant for the {DEMO_ORG_NAME} organization.
+def build_system_prompt() -> str:
+    today = date.today().strftime("%B %d, %Y")
+    return f"""You are a data analytics assistant for the {DEMO_ORG_NAME} organization.
+Today's date is {today}. Use this when evaluating date ranges, overdue periods, or any time-relative queries.
 
 CRITICAL RULES — follow these without exception:
 1. You may ONLY query, analyse, or report data that belongs to the {DEMO_ORG_NAME} organization (org ID: {DEMO_ORG_ID}).
 2. Every call to execute_query MUST include "{DEMO_ORG_ID}" in the params list and filter the query by organizationId = %s (or an equivalent join). Never omit this filter.
 3. You must NEVER suggest, write, or execute any INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER, CREATE, or any other write/DDL statement.
 4. If a user asks about data outside the {DEMO_ORG_NAME} organization, politely decline and explain you can only access {DEMO_ORG_NAME} data.
-5. Do not expose raw database credentials, internal UUIDs beyond what is needed to answer the question, or any personal data fields not relevant to the question.
+5. NEVER display internal database UUIDs (e.g. strings like "073de7c7-eaa1-4f83-af72-26116b4caba8") in your responses to the user. These are meaningless to users. Use site names, site codes, or addresses instead.
 
 You have access to tools for schema exploration, custom SQL queries, inspection data, geographic queries, compliance reporting, and weather data — all scoped to {DEMO_ORG_NAME}.
 
-When a user asks about specific types of deficiencies by keyword (e.g. "rust", "antenna", "cable", "loose bolt", "corrosion"), always use query_inspection_data with data_type="deficiency" and pass the keyword as the search_term parameter — do not use execute_query for deficiency keyword searches."""
+SQL RULES — follow these exactly when writing execute_query statements:
+
+A. NEVER filter a LEFT JOIN's right-side table inside the ON condition — this silently returns zero counts. Always use a subquery:
+   WRONG:  LEFT JOIN site_visit sv ON s.id = sv."siteId" AND sv."organizationId" = %s
+   CORRECT: LEFT JOIN (SELECT "siteId", MAX("siteVisitDate") as last_visit FROM site_visit WHERE "organizationId" = %s GROUP BY "siteId") sv ON s.id = sv."siteId"
+
+B. Always double-quote camelCase identifiers: "siteId", "organizationId", "siteVisitDate", "constructedHeight", "towerType", "fccAsrNumber", "internalId", etc.
+
+C. Call the schema tool before querying any table not used in this session. Never assume column names.
+
+D. If a COUNT returns 0 for something implausible, treat the query as broken. Re-examine JOINs, run a sanity check first, only report once confirmed correct.
+
+E. Standard structure + last-visit pattern:
+   LEFT JOIN (SELECT "siteId", MAX("siteVisitDate") as last_visit FROM site_visit WHERE "organizationId" = %s GROUP BY "siteId") sv ON s.id = sv."siteId"
+
+F. TIA inspection status — always use this CASE:
+   CASE WHEN sv.last_visit IS NULL THEN 'Never inspected'
+        WHEN LOWER(s.type) LIKE '%guy%' AND sv.last_visit < (CURRENT_DATE - INTERVAL '3 years') THEN 'Overdue (guyed, 3yr)'
+        WHEN (LOWER(s.type) LIKE '%monopole%' OR LOWER(s.type) LIKE '%self%support%') AND sv.last_visit < (CURRENT_DATE - INTERVAL '5 years') THEN 'Overdue (monopole/self-support, 5yr)'
+        ELSE 'Current'
+   END
+
+G. Never interpolate org IDs into SQL — always use %s parameters. Never report findings from a query that failed multiple times without flagging uncertainty.
+
+When a user asks about specific types of deficiencies by keyword (e.g. "rust", "antenna", "cable", "loose bolt", "corrosion"), always use query_inspection_data with data_type="deficiency" and pass the keyword as the search_term parameter — do not use execute_query for deficiency keyword searches.
+When a user asks about generators (which sites have generators, count of sites with/without generators), always use query_site_facilities with facility_type="generators" — do not use execute_query.
+When a user asks about shelters or buildings at sites, always use query_site_facilities with facility_type="shelters" — do not use execute_query.
+When a user asks about lighting compliance, lightning rod observations, or FAA lighting, always use query_site_facilities with facility_type="lighting_observations" — do not use execute_query.
+When a user asks which sites are in a US state (e.g. "sites in Montana", "towers in Colorado"), always use query_sites_by_location with the state parameter (e.g. state="Montana") — do not use execute_query or explore schema first.
+When a user asks about overdue inspections, sites with the most overdue structures, compliance status, or which towers need inspection, always use get_sites_needing_inspection — do not use execute_query. This tool correctly applies the 3-year rule for guyed towers and the 5-year rule for monopole/self-support towers. Never manually calculate overdue status from raw visit dates."""
 
 # Token management constants
 MAX_TOOL_RESULT_CHARS = 3000
@@ -69,14 +102,25 @@ def select_relevant_tools(query: str, all_tools: list) -> list:
         ],
         "get_sites_needing_inspection": [
             "overdue", "due", "tia", "inspection needed", "needs inspection",
-            "checkup", "compliance", "never inspected"
+            "checkup", "compliance", "never inspected", "most overdue",
+            "inspection schedule", "inspection status", "need inspection",
+            "need to be inspected", "structures overdue", "overdue structures"
         ],
         "query_sites_by_location": [
             "coordinate", "location", "where is", "address", "near",
-            "within", "nearby", "around", "radius", "miles", "find sites"
+            "within", "nearby", "around", "radius", "miles", "find sites",
+            "in montana", "in colorado", "in texas", "in california", "in wyoming",
+            "in idaho", "in utah", "in nevada", "in oregon", "in washington",
+            "sites in", "towers in", "state", "montana", "colorado", "wyoming",
+            "idaho", "utah", "nevada", "oregon", "washington state"
         ],
         "get_weather_for_site": [
             "weather", "temperature", "forecast", "wind", "conditions"
+        ],
+        "query_site_facilities": [
+            "shelter", "shelters", "generator", "generators", "building", "buildings",
+            "lighting", "lightning", "faa", "aviation light", "power backup",
+            "has shelter", "no shelter", "with generator", "without generator",
         ],
     }
     
@@ -178,7 +222,7 @@ class MCPClient:
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4000,
-            system=SYSTEM_PROMPT,
+            system=build_system_prompt(),
             messages=messages,
             tools=relevant_tools  # Only send relevant tools!
         )
@@ -278,7 +322,7 @@ class MCPClient:
             response = self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
                 max_tokens=4000,
-                system=SYSTEM_PROMPT,
+                system=build_system_prompt(),
                 messages=messages,
                 tools=relevant_tools  # Keep using same relevant tools
             )

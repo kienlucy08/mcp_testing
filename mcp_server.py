@@ -560,14 +560,14 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="query_sites_by_location",
-            description="""Query sites by location. Can get coordinates for a single site,
-            or find all sites within a radius of coordinates or another site.""",
+            description="""Query sites by location. Use state parameter to find all sites in a US state (e.g. state="Montana" or state="MT").
+            Can also find sites within a radius of given coordinates.""",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "site_id": {
+                    "state": {
                         "type": "string",
-                        "description": "Site UUID - if provided alone, returns that site's coordinates. If with radius finds nearby sites."
+                        "description": "US state name (e.g. 'Montana', 'Colorado') or abbreviation (e.g. 'MT', 'CO'). Returns all sites in that state."
                     },
                     "latitude": {
                         "type": "number",
@@ -582,13 +582,9 @@ async def list_tools() -> list[Tool]:
                         "description": "Search radius in miles (triggers nearby search mode)",
                         "default": 10
                     },
-                    "organization_id": {
-                        "type": "string",
-                        "description": "Filter by organization UUID"
-                    },
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum results for radius search (default: 50)",
+                        "description": "Maximum results (default: 50)",
                         "default": 50
                     }
                 }
@@ -647,7 +643,40 @@ async def list_tools() -> list[Tool]:
                     }
                 }
             }
-        )
+        ),
+        Tool(
+            name="query_site_facilities",
+            description=(
+                f"Query facility and equipment presence across {DEMO_ORG_NAME} sites. "
+                "Use this tool — not execute_query — for questions about generators, shelters, or lighting observations. "
+                "Returns a summary count (sites with vs. without) and a per-site breakdown. "
+                "facility_type values: "
+                "'generators' — which sites have generators (joins via compound table); "
+                "'shelters' — which sites have shelters/buildings (bphocs table via compound); "
+                "'lighting_observations' — lighting and lightning-rod observations across sites."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "facility_type": {
+                        "type": "string",
+                        "enum": ["generators", "shelters", "lighting_observations"],
+                        "description": (
+                            "Facility type to query. "
+                            "'generators' checks generator presence via compound→site join. "
+                            "'shelters' checks shelter/building presence from bphocs table. "
+                            "'lighting_observations' returns lighting-related appurtenance records."
+                        )
+                    },
+                    "include_site_list": {
+                        "type": "boolean",
+                        "description": "Include per-site breakdown (default: true)",
+                        "default": True
+                    }
+                },
+                "required": ["facility_type"]
+            }
+        ),
 ]
 
 @app.call_tool()
@@ -832,15 +861,111 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             return [TextContent(type="text", text=response)]
         
-        elif name == "get_sites_by_location":
+        elif name in ("get_sites_by_location", "query_sites_by_location"):
             site_id = arguments.get("site_id")
             center_lat = arguments.get("latitude")
             center_long = arguments.get("longitude")
             radius_miles = arguments.get("radius_miles")
+            state_input = arguments.get("state")
             # DEMO SAFEGUARD: always restrict to the demo org, ignoring any caller-supplied value
             organization_id = DEMO_ORG_ID
             logger.info(f"DEMO SAFEGUARD: query_sites_by_location scoped to org {DEMO_ORG_ID}")
             limit = arguments.get("limit", 50)
+
+            # US state bounding boxes: (min_lat, max_lat, min_lon, max_lon)
+            STATE_BOUNDS = {
+                "AL": (30.14, 35.01, -88.47, -84.89), "ALABAMA": (30.14, 35.01, -88.47, -84.89),
+                "AK": (54.56, 71.54, -179.15, -129.99), "ALASKA": (54.56, 71.54, -179.15, -129.99),
+                "AZ": (31.33, 37.00, -114.82, -109.05), "ARIZONA": (31.33, 37.00, -114.82, -109.05),
+                "AR": (33.00, 36.50, -94.62, -89.64), "ARKANSAS": (33.00, 36.50, -94.62, -89.64),
+                "CA": (32.53, 42.01, -124.41, -114.13), "CALIFORNIA": (32.53, 42.01, -124.41, -114.13),
+                "CO": (36.99, 41.00, -109.06, -102.04), "COLORADO": (36.99, 41.00, -109.06, -102.04),
+                "CT": (40.99, 42.05, -73.73, -71.79), "CONNECTICUT": (40.99, 42.05, -73.73, -71.79),
+                "DE": (38.45, 39.84, -75.79, -75.05), "DELAWARE": (38.45, 39.84, -75.79, -75.05),
+                "FL": (24.54, 31.00, -87.63, -79.97), "FLORIDA": (24.54, 31.00, -87.63, -79.97),
+                "GA": (30.36, 35.00, -85.61, -80.84), "GEORGIA": (30.36, 35.00, -85.61, -80.84),
+                "HI": (18.91, 28.40, -178.33, -154.81), "HAWAII": (18.91, 28.40, -178.33, -154.81),
+                "ID": (41.99, 49.00, -117.24, -111.04), "IDAHO": (41.99, 49.00, -117.24, -111.04),
+                "IL": (36.97, 42.51, -91.51, -87.02), "ILLINOIS": (36.97, 42.51, -91.51, -87.02),
+                "IN": (37.77, 41.76, -88.10, -84.78), "INDIANA": (37.77, 41.76, -88.10, -84.78),
+                "IA": (40.38, 43.50, -96.64, -90.14), "IOWA": (40.38, 43.50, -96.64, -90.14),
+                "KS": (36.99, 40.00, -102.05, -94.59), "KANSAS": (36.99, 40.00, -102.05, -94.59),
+                "KY": (36.50, 39.15, -89.57, -81.96), "KENTUCKY": (36.50, 39.15, -89.57, -81.96),
+                "LA": (28.93, 33.02, -94.04, -88.82), "LOUISIANA": (28.93, 33.02, -94.04, -88.82),
+                "ME": (43.06, 47.46, -71.08, -66.95), "MAINE": (43.06, 47.46, -71.08, -66.95),
+                "MD": (37.91, 39.72, -79.49, -75.05), "MARYLAND": (37.91, 39.72, -79.49, -75.05),
+                "MA": (41.24, 42.89, -73.51, -69.93), "MASSACHUSETTS": (41.24, 42.89, -73.51, -69.93),
+                "MI": (41.70, 48.31, -90.42, -82.41), "MICHIGAN": (41.70, 48.31, -90.42, -82.41),
+                "MN": (43.50, 49.38, -97.24, -89.49), "MINNESOTA": (43.50, 49.38, -97.24, -89.49),
+                "MS": (30.17, 35.01, -91.65, -88.10), "MISSISSIPPI": (30.17, 35.01, -91.65, -88.10),
+                "MO": (35.99, 40.61, -95.77, -89.10), "MISSOURI": (35.99, 40.61, -95.77, -89.10),
+                "MT": (44.36, 49.00, -116.05, -104.04), "MONTANA": (44.36, 49.00, -116.05, -104.04),
+                "NE": (39.99, 43.00, -104.05, -95.31), "NEBRASKA": (39.99, 43.00, -104.05, -95.31),
+                "NV": (35.00, 42.00, -120.00, -114.04), "NEVADA": (35.00, 42.00, -120.00, -114.04),
+                "NH": (42.70, 45.31, -72.56, -70.61), "NEW HAMPSHIRE": (42.70, 45.31, -72.56, -70.61),
+                "NJ": (38.92, 41.36, -75.56, -73.89), "NEW JERSEY": (38.92, 41.36, -75.56, -73.89),
+                "NM": (31.33, 37.00, -109.05, -103.00), "NEW MEXICO": (31.33, 37.00, -109.05, -103.00),
+                "NY": (40.50, 45.01, -79.76, -71.86), "NEW YORK": (40.50, 45.01, -79.76, -71.86),
+                "NC": (33.84, 36.59, -84.32, -75.46), "NORTH CAROLINA": (33.84, 36.59, -84.32, -75.46),
+                "ND": (45.94, 49.00, -104.05, -96.55), "NORTH DAKOTA": (45.94, 49.00, -104.05, -96.55),
+                "OH": (38.40, 42.33, -84.82, -80.52), "OHIO": (38.40, 42.33, -84.82, -80.52),
+                "OK": (33.62, 37.00, -103.00, -94.43), "OKLAHOMA": (33.62, 37.00, -103.00, -94.43),
+                "OR": (41.99, 46.26, -124.57, -116.46), "OREGON": (41.99, 46.26, -124.57, -116.46),
+                "PA": (39.72, 42.27, -80.52, -74.69), "PENNSYLVANIA": (39.72, 42.27, -80.52, -74.69),
+                "RI": (41.15, 42.02, -71.91, -71.12), "RHODE ISLAND": (41.15, 42.02, -71.91, -71.12),
+                "SC": (32.05, 35.22, -83.36, -78.54), "SOUTH CAROLINA": (32.05, 35.22, -83.36, -78.54),
+                "SD": (42.48, 45.94, -104.06, -96.44), "SOUTH DAKOTA": (42.48, 45.94, -104.06, -96.44),
+                "TN": (34.98, 36.68, -90.31, -81.65), "TENNESSEE": (34.98, 36.68, -90.31, -81.65),
+                "TX": (25.84, 36.50, -106.65, -93.51), "TEXAS": (25.84, 36.50, -106.65, -93.51),
+                "UT": (36.99, 42.00, -114.05, -109.04), "UTAH": (36.99, 42.00, -114.05, -109.04),
+                "VT": (42.73, 45.02, -73.44, -71.50), "VERMONT": (42.73, 45.02, -73.44, -71.50),
+                "VA": (36.54, 39.47, -83.68, -75.24), "VIRGINIA": (36.54, 39.47, -83.68, -75.24),
+                "WA": (45.54, 49.00, -124.73, -116.92), "WASHINGTON": (45.54, 49.00, -124.73, -116.92),
+                "WV": (37.20, 40.64, -82.64, -77.72), "WEST VIRGINIA": (37.20, 40.64, -82.64, -77.72),
+                "WI": (42.49, 47.08, -92.89, -86.25), "WISCONSIN": (42.49, 47.08, -92.89, -86.25),
+                "WY": (40.99, 45.01, -111.05, -104.05), "WYOMING": (40.99, 45.01, -111.05, -104.05),
+            }
+
+            # State-based query mode
+            if state_input:
+                state_key = state_input.strip().upper()
+                bounds = STATE_BOUNDS.get(state_key)
+                if not bounds:
+                    return [TextContent(type="text", text=f"Unknown state: '{state_input}'. Use a US state name or 2-letter abbreviation.")]
+                min_lat, max_lat, min_lon, max_lon = bounds
+                state_query = """
+                    SELECT
+                        name,
+                        address,
+                        s."internalId" AS site_code,
+                        ST_Y(location) AS latitude,
+                        ST_X(location) AS longitude,
+                        elevation
+                    FROM site s
+                    WHERE s."organizationId" = %s
+                      AND location IS NOT NULL
+                      AND ST_Y(location) BETWEEN %s AND %s
+                      AND ST_X(location) BETWEEN %s AND %s
+                    ORDER BY name
+                """
+                state_results = db.execute_query(state_query, (organization_id, min_lat, max_lat, min_lon, max_lon))
+                display_name = state_input.title()
+                if not state_results:
+                    return [TextContent(type="text", text=f"No {DEMO_ORG_NAME} sites found in {display_name}.")]
+                resp = f"SITES IN {display_name.upper()} — {DEMO_ORG_NAME}\n"
+                resp += "=" * 60 + "\n\n"
+                resp += f"Found {len(state_results)} site(s):\n\n"
+                for s in state_results:
+                    code = f" [{s['site_code']}]" if s.get("site_code") else ""
+                    resp += f"  {s['name']}{code}\n"
+                    if s.get("address"):
+                        resp += f"    Address: {s['address']}\n"
+                    if s.get("latitude") and s.get("longitude"):
+                        resp += f"    Coordinates: {s['latitude']:.4f}°N, {abs(s['longitude']):.4f}°W\n"
+                    if s.get("elevation"):
+                        resp += f"    Elevation: {s['elevation']} m\n"
+                    resp += "\n"
+                return [TextContent(type="text", text=resp)]
 
             # Determine mode: single site lookup vs radius search
             is_radius_search = radius_miles is not None or center_lat is not None or center_long is not None
@@ -948,8 +1073,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 for site in results:
                     response += f"{site['name']}\n"
                     response += f"   {site.get('address', 'No address')}, {site.get('country', '')}\n"
-                    response += f"   Distance: {site['distance_miles']:.2f} miles\n"
-                    response += f"   ID: {site['id']}\n\n"
+                    response += f"   Distance: {site['distance_miles']:.2f} miles\n\n"
             else:
                 for site in results[:10]:
                     response += f"* {site['name']} - {site['distance_miles']:.2f} mi - {site.get('country', '')}\n"
@@ -1192,7 +1316,6 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             response += f"\nSite Details:\n"
             response += f"  Coordinates: {lat}°N, {lon}°W\n"
             response += f"  Elevation: {site_data.get('elevation', 'N/A')} meters\n"
-            response += f"  Site ID: {site_id}\n"
             
             logger.info(f">>> WEATHER TOOL COMPLETE - returning {len(response)} chars")
             return [TextContent(type="text", text=response)]
@@ -1230,10 +1353,11 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             params.extend([guyed_cutoff_str, monopole_cutoff_str, guyed_cutoff_str, monopole_cutoff_str])
             params.append(limit)
             
-            # Query with structure type logic - FIXED to use siteVisitDate
+            # Query with structure type logic
+            # site_visit is aggregated in a subquery before joining (never filter inside LEFT JOIN ON clause)
             query = f"""
                 WITH site_structure_visits AS (
-                    SELECT 
+                    SELECT
                         s.id as site_id,
                         s.name as site_name,
                         s.address,
@@ -1247,17 +1371,20 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                         st."constructedHeight" as tower_height,
                         st."fccAsrNumber" as fcc_asr_number,
                         st."internalId" as structure_internal_id,
-                        MAX(sv."siteVisitDate") as last_visit_date,
-                        COUNT(CASE WHEN sv.id IS NOT NULL THEN 1 END) as total_visits
+                        sv.last_visit_date,
+                        COALESCE(sv.total_visits, 0) as total_visits
                     FROM site s
                     LEFT JOIN organization o ON s."organizationId" = o.id
                     LEFT JOIN structure st ON s.id = st."siteId"
-                    LEFT JOIN site_visit sv ON s.id = sv."siteId"
+                    LEFT JOIN (
+                        SELECT "siteId",
+                               MAX("siteVisitDate") as last_visit_date,
+                               COUNT(id)            as total_visits
+                        FROM site_visit
+                        GROUP BY "siteId"
+                    ) sv ON s.id = sv."siteId"
                     WHERE st.id IS NOT NULL
                     {where_clause}
-                    GROUP BY s.id, s.name, s.address, s.country, s."organizationId", s."internalId", 
-                            o.name, st.id, st.name, st.type, st."constructedHeight", 
-                            st."fccAsrNumber", st."internalId"
                 ),
                 overdue_analysis AS (
                     SELECT 
@@ -1376,7 +1503,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                         response += f"     FCC ASR: {tower['fcc_asr_number'] or 'N/A'}\n"
                         response += f"     Location: {tower.get('address', 'N/A')}\n"
                         response += f"     Status: Never visited\n"
-                        response += f"     Site ID: {tower['site_id']}\n\n"
+                        response += "\n"
                     if len(guyed) > 10:
                         response += f"     ... and {len(guyed) - 10} more guyed towers\n\n"
                 
@@ -1483,9 +1610,158 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             
             return [TextContent(type="text", text=response)]
 
+        elif name == "query_site_facilities":
+            facility_type = arguments.get("facility_type")
+            include_site_list = arguments.get("include_site_list", True)
+
+            if facility_type == "generators":
+                query = """
+                    SELECT
+                        s.id           AS site_id,
+                        s.name         AS site_name,
+                        s."internalId" AS site_code,
+                        s.address,
+                        COUNT(g.id)    AS generator_count
+                    FROM site s
+                    LEFT JOIN compound c  ON c."siteId" = s.id
+                    LEFT JOIN compound_general cg ON cg."compoundId" = c.id
+                    LEFT JOIN generator g ON g."compoundGeneralId" = cg.id
+                    WHERE s."organizationId" = %s
+                    GROUP BY s.id, s.name, s."internalId", s.address
+                    ORDER BY generator_count DESC, s.name
+                """
+                results = db.execute_query(query, (DEMO_ORG_ID,))
+                if not results:
+                    return [TextContent(type="text", text="No site data found.")]
+
+                with_gen    = [r for r in results if (r.get("generator_count") or 0) > 0]
+                without_gen = [r for r in results if (r.get("generator_count") or 0) == 0]
+
+                resp  = f"GENERATOR PRESENCE — {DEMO_ORG_NAME}\n"
+                resp += "=" * 60 + "\n\n"
+                resp += f"Sites WITH generators:    {len(with_gen):>4}\n"
+                resp += f"Sites WITHOUT generators: {len(without_gen):>4}\n"
+                resp += f"Total sites:              {len(results):>4}\n"
+
+                if include_site_list and with_gen:
+                    resp += f"\nSITES WITH GENERATORS ({len(with_gen)}):\n"
+                    resp += "-" * 40 + "\n"
+                    for r in with_gen:
+                        code  = f" [{r['site_code']}]" if r.get("site_code") else ""
+                        cnt   = r["generator_count"]
+                        resp += f"  {r['site_name']}{code} — {cnt} generator{'s' if cnt != 1 else ''}\n"
+
+                if include_site_list and without_gen:
+                    resp += f"\nSITES WITHOUT GENERATORS ({len(without_gen)}):\n"
+                    resp += "-" * 40 + "\n"
+                    for r in without_gen[:25]:
+                        code  = f" [{r['site_code']}]" if r.get("site_code") else ""
+                        resp += f"  {r['site_name']}{code}\n"
+                    if len(without_gen) > 25:
+                        resp += f"  ... and {len(without_gen) - 25} more\n"
+
+                return [TextContent(type="text", text=resp)]
+
+            elif facility_type == "shelters":
+                query = """
+                    SELECT
+                        s.id           AS site_id,
+                        s.name         AS site_name,
+                        s."internalId" AS site_code,
+                        s.address,
+                        COUNT(b.id)    AS shelter_count
+                    FROM site s
+                    LEFT JOIN compound c ON c."siteId" = s.id
+                    LEFT JOIN bphocs b   ON b."compoundId" = c.id
+                    WHERE s."organizationId" = %s
+                    GROUP BY s.id, s.name, s."internalId", s.address
+                    ORDER BY shelter_count DESC, s.name
+                """
+                results = db.execute_query(query, (DEMO_ORG_ID,))
+                if not results:
+                    return [TextContent(type="text", text="No site data found.")]
+
+                with_sh    = [r for r in results if (r.get("shelter_count") or 0) > 0]
+                without_sh = [r for r in results if (r.get("shelter_count") or 0) == 0]
+
+                resp  = f"SHELTER PRESENCE — {DEMO_ORG_NAME}\n"
+                resp += "=" * 60 + "\n\n"
+                resp += f"Sites WITH shelters:    {len(with_sh):>4}\n"
+                resp += f"Sites WITHOUT shelters: {len(without_sh):>4}\n"
+                resp += f"Total sites:            {len(results):>4}\n"
+
+                if include_site_list and with_sh:
+                    resp += f"\nSITES WITH SHELTERS ({len(with_sh)}):\n"
+                    resp += "-" * 40 + "\n"
+                    for r in with_sh:
+                        code  = f" [{r['site_code']}]" if r.get("site_code") else ""
+                        cnt   = r["shelter_count"]
+                        resp += f"  {r['site_name']}{code} — {cnt} shelter record{'s' if cnt != 1 else ''}\n"
+
+                if include_site_list and without_sh:
+                    resp += f"\nSITES WITHOUT SHELTERS ({len(without_sh)}):\n"
+                    resp += "-" * 40 + "\n"
+                    for r in without_sh[:25]:
+                        code  = f" [{r['site_code']}]" if r.get("site_code") else ""
+                        resp += f"  {r['site_name']}{code}\n"
+                    if len(without_sh) > 25:
+                        resp += f"  ... and {len(without_sh) - 25} more\n"
+
+                return [TextContent(type="text", text=resp)]
+
+            elif facility_type == "lighting_observations":
+                # Search other_appurtenance for lightning-rod / lighting compliance records
+                query = """
+                    SELECT
+                        s.id           AS site_id,
+                        s.name         AS site_name,
+                        s."internalId" AS site_code,
+                        oa.name        AS observation_name,
+                        oa.description AS observation_description,
+                        oa."createdAt" AS created_at
+                    FROM other_appurtenance oa
+                    JOIN site s ON s.id = oa."siteId"
+                    WHERE oa."organizationId" = %s
+                      AND (
+                          oa.name        ILIKE '%light%'
+                       OR oa.description ILIKE '%light%'
+                       OR oa.name        ILIKE '%FAA%'
+                       OR oa.name        ILIKE '%aviation%'
+                      )
+                    ORDER BY s.name, oa.name
+                    LIMIT 200
+                """
+                results = db.execute_query(query, (DEMO_ORG_ID,))
+
+                resp  = f"LIGHTING OBSERVATIONS — {DEMO_ORG_NAME}\n"
+                resp += "=" * 60 + "\n\n"
+
+                if not results:
+                    resp += "No lighting or lightning-rod observations found.\n"
+                else:
+                    site_map: dict = {}
+                    for r in results:
+                        sn = r.get("site_name", "Unknown")
+                        site_map.setdefault(sn, []).append(r)
+
+                    resp += f"Total observations: {len(results)} across {len(site_map)} site(s)\n\n"
+                    for site_name, obs in sorted(site_map.items()):
+                        resp += f"  {site_name}:\n"
+                        for o in obs:
+                            name  = o.get("observation_name") or "(unnamed)"
+                            desc  = o.get("observation_description") or ""
+                            desc_str = f" — {desc[:80]}" if desc else ""
+                            resp += f"    • {name}{desc_str}\n"
+                        resp += "\n"
+
+                return [TextContent(type="text", text=resp)]
+
+            else:
+                return [TextContent(type="text", text=f"Unknown facility_type: {facility_type}")]
+
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
-    
+
     except Exception as e:
         logger.error(f"Error in {name}: {str(e)}", exc_info=True)
         return [TextContent(

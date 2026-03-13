@@ -365,6 +365,31 @@
             border-left-color: #667eea;
             color: #1e40af;
         }
+
+        .example-category-label.roadmap {
+            color: #a78bfa;
+        }
+
+        .example-category-label.roadmap::after {
+            content: " — coming soon";
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            font-style: italic;
+        }
+
+        .example-query.roadmap {
+            color: #9ca3af;
+            background: #fafafa;
+            cursor: default;
+            border-left-color: transparent;
+        }
+
+        .example-query.roadmap:hover {
+            background: #fafafa;
+            border-left-color: transparent;
+            color: #9ca3af;
+        }
     </style>
 </head>
 <body>
@@ -417,17 +442,26 @@
                     <div class="example-category-label">Inspection Compliance</div>
                     <div class="example-query" onclick="useExample(this)">Which towers need TIA inspection?</div>
                     <div class="example-query" onclick="useExample(this)">How many towers have never been inspected?</div>
-                    <div class="example-query" onclick="useExample(this)">Show me all guyed towers that are overdue for inspection.</div>
                     <div class="example-query" onclick="useExample(this)">Which sites have the most overdue structures?</div>
                 </div>
 
                 <div class="example-category">
                     <div class="example-category-label">Deficiency Analysis</div>
+                    <div class="example-query" onclick="useExample(this)">What are our top trending deficiencies?</div>
+                    <div class="example-query" onclick="useExample(this)">Show a breakdown of deficiency severity across all sites.</div>
+                    <div class="example-query" onclick="useExample(this)">How many deficiencies are there by state?</div>
                     <div class="example-query" onclick="useExample(this)">What are the most common deficiencies?</div>
                     <div class="example-query" onclick="useExample(this)">Find all deficiencies related to rust.</div>
                     <div class="example-query" onclick="useExample(this)">What severity-1 deficiencies were logged in the last 6 months?</div>
-                    <div class="example-query" onclick="useExample(this)">Which sites have the highest number of open deficiencies?</div>
                     <div class="example-query" onclick="useExample(this)">Compare deficiency rates across different tower types (monopole, guyed, and self-support).</div>
+                </div>
+
+                <div class="example-category">
+                    <div class="example-category-label">Site Equipment &amp; Observations</div>
+                    <div class="example-query" onclick="useExample(this)">Which sites have shelters? How many sites have no shelter?</div>
+                    <div class="example-query" onclick="useExample(this)">How many sites have generators? Show a count of sites with and without generators.</div>
+                    <div class="example-query" onclick="useExample(this)">Which sites have lightning rod observations? Are there any compliance issues?</div>
+                    <div class="example-query" onclick="useExample(this)">Show me all lighting compliance observations across sites.</div>
                 </div>
 
                 <div class="example-category">
@@ -440,14 +474,18 @@
 
                 <div class="example-category">
                     <div class="example-category-label">Geographic</div>
-                    <div class="example-query" onclick="useExample(this)">Find all sites within 50 miles of site 7b9dbd13-92b9-4aca-b38e-ade56097ecbf.</div>
-                    <div class="example-query" onclick="useExample(this)">What sites are in Texas?</div>
+                    <div class="example-query" onclick="useExample(this)">Find all sites within 50 miles of Syracuse NY?.</div>
+                    <div class="example-query" onclick="useExample(this)">Tell me about the sites in Wisconsin.</div>
+                    <div class="example-query" onclick="useExample(this)">Give me a full equipment breakdown for the Montana site with structure owner id Mt. Baldy</div>
                 </div>
 
                 <div class="example-category">
-                    <div class="example-category-label">Weather</div>
-                    <div class="example-query" onclick="useExample(this)">What is the weather at site 1a7fbff1-5b9d-4c6d-9984-11f31811ec12? Any extreme conditions?</div>
-                    <div class="example-query" onclick="useExample(this)">Show the 5-day forecast for site 1a7fbff1-5b9d-4c6d-9984-11f31811ec12.</div>
+                    <div class="example-category-label">Equipment Inventory</div>
+                    <div class="example-query" onclick="useExample(this)">What types of equipment have been catalogued across all sites?</div>
+                    <div class="example-query" onclick="useExample(this)">How many antenna equipment records exist across the organization?</div>
+                    <div class="example-query" onclick="useExample(this)">Show me a count of appurtenances by site.</div>
+                    <div class="example-query" onclick="useExample(this)">Which sites have the most equipment inventory records?</div>
+                    <div class="example-query" onclick="useExample(this)">Show me all guy wire and guy attachment records across the organization.</div>
                 </div>
             </div>
         </div>
@@ -690,6 +728,7 @@
         }
 
         function useExample(element) {
+            if (element.classList.contains('roadmap')) return;
             if (!connected) {
                 alert('Please connect to the server first');
                 return;

@@ -6,13 +6,14 @@ A conversational analytics interface that connects Claude AI to a PostgreSQL dat
 
 ## What It Does
 
-The server exposes seven tools to Claude, covering:
+The server exposes tools to Claude covering:
 
 - **Schema exploration** — understand the database structure before querying
 - **Custom SQL** — write ad-hoc SELECT queries (org-scoped, read-only enforced)
 - **Inspection compliance** — find towers overdue for inspection by tower type
 - **Deficiency search** — query deficiency records by keyword, severity, date, or site
-- **Geographic queries** — find sites by coordinates or radius
+- **Site facilities** — pre-built queries for generators, shelters, and lighting observations
+- **Geographic queries** — find sites by US state or radius from coordinates
 - **Weather** — live conditions and 5-day forecast for any site location
 
 All queries are automatically scoped to a single organization defined in `.env`. No write operations are possible.
@@ -138,47 +139,90 @@ The restart is required — the org ID is loaded once at startup and baked into 
 | `schema` | Questions about database structure | *"What tables are related to inspections?"* |
 | `execute_query` | Custom data questions | *"How many sites have no address?"* |
 | `explore_data_relationships` | Understanding how tables connect | *"How does a deficiency link back to a site?"* |
-| `query_sites_by_location` | Geography / proximity | *"Find all sites within 30 miles of this location"* |
+| `query_sites_by_location` | Geography — US state lookup or radius search | *"Which sites are in Wisconsin?"* |
 | `query_inspection_data` | Safety climbs, deficiencies by keyword/severity/date | *"Show me all severity-1 deficiencies in the last year"* |
-| `get_sites_needing_inspection` | Compliance reporting | *"Which guyed towers are overdue for inspection?"* |
+| `get_sites_needing_inspection` | Compliance — applies correct 3yr/5yr rules by tower type | *"Which guyed towers are overdue for inspection?"* |
+| `query_site_facilities` | Generators, shelters, lighting observations | *"How many sites have generators?"* |
 | `get_weather_for_site` | Live weather at a site | *"What are the current conditions at site X?"* |
 
 ---
 
-## Example Demo Questions
+## Demo Questions
 
-**Inspection compliance:**
+These are the questions used in the live demo, organized by category. All are clickable in the UI.
+
+### Inspection Compliance
 - *Which towers need TIA inspection?*
 - *How many towers have never been inspected?*
-- *Show me all guyed towers that are overdue for inspection.*
 - *Which sites have the most overdue structures?*
 
-**Deficiency analysis:**
+> **Note:** Inspection overdue status is determined by tower type — guyed towers every 3 years, monopole/self-support every 5 years. The compliance tool (`get_sites_needing_inspection`) applies these thresholds correctly. Do not rely on raw "days since visit" numbers alone.
+
+### Deficiency Analysis
+- *What are our top trending deficiencies?*
+- *Show a breakdown of deficiency severity across all sites.*
+- *How many deficiencies are there by state?*
 - *What are the most common deficiencies?*
 - *Find all deficiencies related to rust.*
 - *What severity-1 deficiencies were logged in the last 6 months?*
-- *Which sites have the highest number of open deficiencies?*
 - *Compare deficiency rates across different tower types (monopole, guyed, and self-support).*
 
-**Tower inventory:**
-- *How many total towers does EverestInfrastructure have?*
+### Site Equipment & Observations
+- *Which sites have shelters? How many sites have no shelter?*
+- *How many sites have generators? Show a count of sites with and without generators.*
+- *Which sites have lightning rod observations? Are there any compliance issues?*
+- *Show me all lighting compliance observations across sites.*
+
+### Tower Inventory
+- *How many total towers does the organization have?*
 - *Show me the top 10 tallest structures.*
 - *What is the breakdown of tower types (guyed vs monopole vs self-support)?*
 - *Which sites have structures over 500 feet tall?*
 
-**Geographic:**
-- *Find all sites within 25 miles of [city/coordinates].*
-- *What sites are in [state]?*
+### Geographic
+- *Find all sites within 50 miles of Syracuse NY.*
+- *Tell me about the sites in Wisconsin.*
+- *Give me a full equipment breakdown for the Montana site with structure owner id Mt. Baldy*
 
-**Weather:**
-- *What is the weather at [site name]? Any extreme conditions?*
-- *Show the 5-day forecast for [site name].*
+> **Note on Mt. Baldy:** This is the organization's only Montana site. It is a self-support tower and its last inspection was approximately 1.5 years ago — well within the 5-year compliance window. It should not appear in overdue reports.
+
+### Equipment Inventory
+- *What types of equipment have been catalogued across all sites?*
+- *How many antenna equipment records exist across the organization?*
+- *Show me a count of appurtenances by site.*
+- *Which sites have the most equipment inventory records?*
+- *Show me all guy wire and guy attachment records across the organization.*
+
+---
+
+## Key Demo Talking Points
+
+### Live AI-to-database pipeline
+Every question goes through Claude in real time — there is no pre-cached answer set. Claude selects tools, writes SQL, reads results, and synthesizes a natural-language response on the fly. The tool call log shown in the UI is the actual sequence of database operations that produced the answer.
+
+### Correct inspection thresholds, always enforced
+Guyed towers require inspection every **3 years**. Monopole and self-support towers require inspection every **5 years**. This logic is enforced in the pre-built compliance tool and is baked into Claude's system prompt — so ad-hoc queries follow the same rules. A self-support tower last visited 1.5 years ago is correctly identified as compliant, not overdue.
+
+### Pre-built tools for common questions
+Generators, shelters, and lighting observations each have dedicated pre-built tools that answer in one database round-trip without schema exploration. This keeps responses fast and avoids multi-step fallback paths.
+
+### Automatic token and tool-call management
+The client caps tool calls at 30 per query, trims message history to the last 15 messages, and truncates large tool results to 3,000 characters. This prevents runaway queries during a live demo.
+
+### No UUIDs shown to users
+Internal database UUIDs are never displayed in responses. The system prompt explicitly forbids it, and the pre-built tool formatters strip UUIDs from all output. Users only see site names, site codes, and addresses.
+
+### Current date awareness
+The system prompt is rebuilt on every query with today's date injected. Date-relative questions ("in the last 6 months", "overdue for 3 years") always calculate from the actual current date, not a stale startup value.
+
+### Geographic queries by state
+"Which sites are in Montana?" or "Tell me about sites in Wisconsin" routes directly to `query_sites_by_location` with a built-in US state bounding-box lookup — no schema exploration needed, single tool call. All 50 states are supported.
 
 ---
 
 ## Security Safeguards Summary
 
-This server is configured for safe, read-only use against the production database. Six independent layers of protection are in place:
+This server is configured for safe, read-only use against the production database. Seven independent layers of protection are in place:
 
 1. **Read-only database account** — `postgres_readonly` has `SELECT` privileges only at the PostgreSQL account level. Even a direct database connection with these credentials cannot write data.
 2. **Read-only session flag** — every connection sets `default_transaction_read_only=on` at the driver level. The database rejects any write or DDL statement even if one were to bypass application checks.
@@ -187,3 +231,41 @@ This server is configured for safe, read-only use against the production databas
 5. **Parameterized queries** — no user input is ever interpolated directly into SQL strings, preventing SQL injection.
 6. **Org ID enforcement** — every query path enforces `DEMO_ORG_ID`; the value cannot be overridden by the user or by Claude. Custom queries are rejected server-side if the org ID is not present in the parameters.
 7. **Query length cap** — custom SQL is limited to 5,000 characters.
+
+---
+
+## Architecture Notes
+
+### How tool routing works
+To reduce API token usage, the client does not send all available tools to Claude on every query. `select_relevant_tools()` in `mcp_client.py` pattern-matches the user's question and sends only the relevant subset. Core tools (`schema`, `execute_query`) are always included. Specialized tools are added based on keywords:
+
+| Keyword triggers | Tool added |
+|---|---|
+| rust, deficiency, deficiencies, issue, fault | `query_inspection_data` |
+| overdue, most overdue, never inspected, compliance | `get_sites_needing_inspection` |
+| generator, shelter, lighting, FAA, lightning | `query_site_facilities` |
+| state, Montana, Wisconsin, near, radius, miles | `query_sites_by_location` |
+| weather, forecast, wind, temperature | `get_weather_for_site` |
+
+### System prompt routing rules
+Claude's system prompt includes explicit routing instructions that tell it which tool to use for specific question types, even before it decides to write a query. These prevent Claude from defaulting to `execute_query` + schema exploration for questions that have faster dedicated tools.
+
+### SQL correctness rules in the system prompt
+Claude's system prompt includes explicit SQL rules that govern every `execute_query` call:
+
+- **LEFT JOIN subquery rule** — Filtering a LEFT JOIN's right-side table inside the ON clause silently returns zero counts. All filtered LEFT JOINs must use a subquery. This is the single most common source of incorrect zero results in this codebase.
+- **camelCase quoting** — All camelCase identifiers must be double-quoted (`"siteId"`, `"organizationId"`, `"siteVisitDate"`, etc.). PostgreSQL is case-sensitive.
+- **Schema verification** — Claude calls the `schema` tool before querying any table it hasn't used in the session.
+- **Suspicious zero counts** — A COUNT returning 0 for something plausible must be treated as a broken query, not a confirmed finding. Claude runs a sanity check before reporting.
+- **TIA inspection CASE** — A specific CASE structure is provided for determining inspection status, applying 3-year and 5-year thresholds correctly based on tower type.
+
+### Database join paths for key tables
+Some tables have non-obvious join paths that caused incorrect zero results before dedicated tools were built:
+
+| Facility | Join path |
+|---|---|
+| Generators | `site → compound → compound_general → generator` (via `"compoundGeneralId"`) |
+| Shelters (bphocs) | `site → compound → bphocs` (via `"compoundId"`) |
+| Lighting observations | `other_appurtenance` joined to `site` via `"siteId"` |
+
+These are handled by `query_site_facilities` so Claude does not need to discover them at query time.
