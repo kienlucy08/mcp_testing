@@ -21,12 +21,33 @@ ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 DEMO_ORG_ID   = os.getenv("DEMO_ORG_ID", "XYZ")
 DEMO_ORG_NAME = os.getenv("DEMO_ORG_NAME", "Everest")
 
-# Auto-detect the server script path relative to this file
-DEFAULT_SERVER_PATH = str(Path(__file__).resolve().parent / "mcp_server.py")
+# Auto-detect the server script path relative to this file (forward slashes work on Windows)
+DEFAULT_SERVER_PATH = (Path(__file__).resolve().parent / "mcp_server.py").as_posix()
+DEMO_SERVER_PATH = (Path(__file__).resolve().parent / "everest_demo_server.py").as_posix()
 
 # System prompt enforces org scope at the LLM layer
-def build_system_prompt() -> str:
+def build_system_prompt(cached_schema: str = "") -> str:
     today = date.today().strftime("%B %d, %Y")
+
+    if cached_schema:
+        # ── DEMO MODE ─────────────────────────────────────────────────────
+        # Schema is already known; only pre-built tools are available.
+        # Claude must call exactly one pre-built tool and present its result.
+        return f"""You are a data analytics assistant for the {DEMO_ORG_NAME} organization.
+Today's date is {today}.
+
+IMPORTANT — DEMO MODE RULES:
+1. You have access ONLY to the pre-built tools listed. Use exactly ONE tool per question.
+2. Call the tool, receive its formatted result, and present that result to the user clearly.
+3. Do NOT attempt additional tool calls after receiving a result.
+4. If a tool returns an error, report the error message verbatim — do not call any other tool.
+5. NEVER display internal database UUIDs in your responses. Use site names or site codes instead.
+6. You may ONLY report data belonging to the {DEMO_ORG_NAME} organization.
+
+DATABASE SCHEMA (for reference — do not call any schema tool):
+{cached_schema}"""
+
+    # ── FULL SERVER MODE ───────────────────────────────────────────────────
     return f"""You are a data analytics assistant for the {DEMO_ORG_NAME} organization.
 Today's date is {today}. Use this when evaluating date ranges, overdue periods, or any time-relative queries.
 
@@ -125,15 +146,67 @@ def select_relevant_tools(query: str, all_tools: list) -> list:
             "lighting", "lightning", "faa", "aviation light", "power backup",
             "has shelter", "no shelter", "with generator", "without generator",
         ],
+        # --- Demo server tools ---
+        "tia_inspection_compliance": [
+            "tia", "tia-222", "structural inspection", "overdue inspection",
+            "never inspected", "need inspection", "which towers need",
+            "towers overdue", "inspection schedule", "inspection due"
+        ],
+        "top_trending_deficiencies": [
+            "trending", "top deficien", "most common deficien", "frequent deficien"
+        ],
+        "deficiency_severity_breakdown": [
+            "severity breakdown", "breakdown of deficien", "deficien", "severity across"
+        ],
+        "deficiencies_by_state": [
+            "deficien", "by state", "state breakdown", "per state"
+        ],
+        "recent_severity1_deficiencies": [
+            "severity-1", "severity 1", "critical deficien", "last 6 months", "recent deficien"
+        ],
+        "shelter_summary": [
+            "shelter", "shelters", "no shelter", "has shelter"
+        ],
+        "generator_summary": [
+            "generator", "generators", "no generator", "has generator", "power backup"
+        ],
+        "lightning_protection_summary": [
+            "lightning rod", "lightning protection", "lightning rods", "grounding",
+            "apex height", "rod observation", "lightning observation"
+        ],
+        "tower_lighting_compliance": [
+            "tower lighting", "lighting observation", "faa light", "aviation light",
+            "beacon", "top beacon", "light fixture", "light assembly",
+            "towers without light", "towers over 100", "lighting present",
+            "which sites have lighting", "lighting across"
+        ],
+        "montana_equipment_breakdown": [
+            "montana", "mt. baldy", "mt baldy", "baldy"
+        ],
+        "experiment_farm_equipment_breakdown": [
+            "experiment farm", "1450 experiment", "experiment farm rd"
+        ],
+        "equipment_types_summary": [
+            "equipment type", "types of equipment", "catalogued", "equipment categor"
+        ],
+        "antenna_equipment_count": [
+            "antenna equipment", "antenna record", "how many antenna"
+        ],
+        "appurtenances_by_site": [
+            "appurtenance", "appurtenances", "count of appurtenance"
+        ],
+        "wisconsin_sites": [
+            "wisconsin", "sites in wisconsin", "towers in wisconsin"
+        ],
     }
-    
+
     selected_tools = set(core_tools)
-    
+
     # Check query against patterns
     for tool_name, patterns in tool_patterns.items():
         if any(pattern in query_lower for pattern in patterns):
             selected_tools.add(tool_name)
-    
+
     # Special case: if asking about weather, also include location tool
     if "weather" in query_lower:
         selected_tools.add("get_weather_for_site")
@@ -141,13 +214,21 @@ def select_relevant_tools(query: str, all_tools: list) -> list:
     # Special case: inspection queries might need relationships
     if "inspection" in query_lower:
         selected_tools.add("explore_data_relationships")
-    
+
+    # Never send get_schema_cache during queries — it is called once at connect time
+    # and its result is injected into the system prompt instead.
+    queryable_tools = [t for t in all_tools if t["name"] != "get_schema_cache"]
+
     # Filter the actual tool definitions
     relevant_tools = [
-        tool for tool in all_tools 
+        tool for tool in queryable_tools
         if tool["name"] in selected_tools
     ]
-    
+
+    # Fallback: if filtering matched nothing, send all queryable tools
+    if not relevant_tools:
+        return queryable_tools
+
     return relevant_tools
 
 class MCPClient:
@@ -158,6 +239,7 @@ class MCPClient:
         self.connected = False
         self.tools = []
         self.all_tools = []  # Store all available tools
+        self.cached_schema = ""  # Schema fetched once at connect time
 
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server"""
@@ -190,11 +272,11 @@ class MCPClient:
         )
 
         await self.session.initialize()
-        
+
         response = await self.session.list_tools()
         self.tools = response.tools
         self.connected = True
-        
+
         # Store formatted tools for dynamic selection
         self.all_tools = [
             {
@@ -204,7 +286,23 @@ class MCPClient:
             }
             for tool in response.tools
         ]
-        
+
+        # If the server exposes get_schema_cache, fetch it once now and store it.
+        # This lets us inject the schema into every system prompt without a tool call.
+        tool_names = [t.name for t in response.tools]
+        if "get_schema_cache" in tool_names:
+            try:
+                schema_result = await self.session.call_tool("get_schema_cache", {})
+                self.cached_schema = "".join(
+                    item.text for item in schema_result.content if hasattr(item, "text")
+                )
+                print(f"Schema cached at connect time ({len(self.cached_schema)} chars).")
+            except Exception as e:
+                print(f"Schema cache fetch failed: {e}")
+                self.cached_schema = ""
+        else:
+            self.cached_schema = ""
+
         return [tool.name for tool in self.tools]
 
     async def process_query(self, query: str) -> dict:
@@ -221,13 +319,13 @@ class MCPClient:
         print(f"Selected relevant tools: {len(relevant_tools)}")
         print(f"Tools selected: {[t['name'] for t in relevant_tools]}")
         
-            # Initial Claude API call with only relevant tools
+        # Initial Claude API call with only relevant tools
         response = self.anthropic.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4000,
-            system=build_system_prompt(),
+            system=build_system_prompt(self.cached_schema),
             messages=messages,
-            tools=relevant_tools  # Only send relevant tools!
+            tools=relevant_tools
         )
 
         # Initialize token tracking
@@ -325,9 +423,9 @@ class MCPClient:
             response = self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
                 max_tokens=4000,
-                system=build_system_prompt(),
+                system=build_system_prompt(self.cached_schema),
                 messages=messages,
-                tools=relevant_tools  # Keep using same relevant tools
+                tools=relevant_tools
             )
 
             total_input_tokens += response.usage.input_tokens
@@ -380,7 +478,7 @@ def run_async(coro):
 
 @app.route('/')
 def index():
-    return render_template('index.html', default_server_path=DEFAULT_SERVER_PATH)
+    return render_template('index.html', default_server_path=DEFAULT_SERVER_PATH, demo_server_path=DEMO_SERVER_PATH)
 
 @app.route('/connect', methods=['POST'])
 def connect():
@@ -445,6 +543,7 @@ def disconnect():
         mcp_client.connected = False
         mcp_client.tools = []
         mcp_client.all_tools = []
+        mcp_client.cached_schema = ""
         return jsonify({'success': True, 'message': 'Disconnected'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -403,10 +403,24 @@
         <div class="card">
             <h2>Connect to MCP Server</h2>
             <div class="input-group">
+                <label>Server Mode:</label>
+                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                    <button type="button" class="button-toggle" id="btnFullServer"
+                            onclick="setServerMode('full')" style="flex:1">
+                        Full Server
+                        <div style="font-size:0.75rem;font-weight:400;margin-top:2px;opacity:0.8">All tools — schema exploration + custom SQL</div>
+                    </button>
+                    <button type="button" class="button-toggle active" id="btnDemoServer"
+                            onclick="setServerMode('demo')" style="flex:1">
+                        Demo Mode
+                        <div style="font-size:0.75rem;font-weight:400;margin-top:2px;opacity:0.8">Pre-built tools — fast answers in &lt;10s</div>
+                    </button>
+                </div>
                 <label for="serverPath">Server Script Path:</label>
                 <input type="text" id="serverPath"
                        placeholder="Path to mcp_server.py"
-                       value="{{ default_server_path }}">
+                       value="{{ demo_server_path }}"
+                       style="font-size:0.85rem;color:#6b7280;">
             </div>
             <button id="connectBtn" onclick="connectToServer()">Connect to Server</button>
             <button class="button-secondary" onclick="disconnect()" id="disconnectBtn" disabled>Disconnect</button>
@@ -438,22 +452,23 @@
             <div class="example-queries">
                 <strong>Example Queries — click to use:</strong>
 
-                <div class="example-category">
+                <!-- <div class="example-category">
                     <div class="example-category-label">Inspection Compliance</div>
                     <div class="example-query" onclick="useExample(this)">Which towers need TIA inspection?</div>
                     <div class="example-query" onclick="useExample(this)">How many towers have never been inspected?</div>
                     <div class="example-query" onclick="useExample(this)">Which sites have the most overdue structures?</div>
-                </div>
+                </div> 
+            -->
 
                 <div class="example-category">
                     <div class="example-category-label">Deficiency Analysis</div>
                     <div class="example-query" onclick="useExample(this)">What are our top trending deficiencies?</div>
                     <div class="example-query" onclick="useExample(this)">Show a breakdown of deficiency severity across all sites.</div>
                     <div class="example-query" onclick="useExample(this)">How many deficiencies are there by state?</div>
-                    <div class="example-query" onclick="useExample(this)">What are the most common deficiencies?</div>
-                    <div class="example-query" onclick="useExample(this)">Find all deficiencies related to rust.</div>
+                    <!-- <div class="example-query" onclick="useExample(this)">What are the most common deficiencies?</div>
+                    <div class="example-query" onclick="useExample(this)">Find all deficiencies related to rust.</div> -->
                     <div class="example-query" onclick="useExample(this)">What severity-1 deficiencies were logged in the last 6 months?</div>
-                    <div class="example-query" onclick="useExample(this)">Compare deficiency rates across different tower types (monopole, guyed, and self-support).</div>
+                    <!-- <div class="example-query" onclick="useExample(this)">Compare deficiency rates across different tower types (monopole, guyed, and self-support).</div> -->
                 </div>
 
                 <div class="example-category">
@@ -464,19 +479,20 @@
                     <div class="example-query" onclick="useExample(this)">Show me all lighting compliance observations across sites.</div>
                 </div>
 
-                <div class="example-category">
+                <!-- <div class="example-category">
                     <div class="example-category-label">Tower Inventory</div>
                     <div class="example-query" onclick="useExample(this)">How many total towers does the organization have?</div>
                     <div class="example-query" onclick="useExample(this)">Show me the top 10 tallest structures.</div>
                     <div class="example-query" onclick="useExample(this)">What is the breakdown of tower types (guyed vs monopole vs self-support)?</div>
                     <div class="example-query" onclick="useExample(this)">Which sites have structures over 500 feet tall?</div>
-                </div>
+                </div> -->
 
                 <div class="example-category">
                     <div class="example-category-label">Geographic</div>
-                    <div class="example-query" onclick="useExample(this)">Find all sites within 50 miles of Syracuse NY?.</div>
+                    <!-- <div class="example-query" onclick="useExample(this)">Find all sites within 50 miles of Syracuse NY?.</div> -->
                     <div class="example-query" onclick="useExample(this)">Tell me about the sites in Wisconsin.</div>
                     <div class="example-query" onclick="useExample(this)">Give me a full equipment breakdown for the Montana site with structure owner id Mt. Baldy</div>
+                    <div class="example-query" onclick="useExample(this)">Give me a full equipment breakdown for the 1450 Experiment Farm Rd</div>
                 </div>
 
                 <div class="example-category">
@@ -484,14 +500,32 @@
                     <div class="example-query" onclick="useExample(this)">What types of equipment have been catalogued across all sites?</div>
                     <div class="example-query" onclick="useExample(this)">How many antenna equipment records exist across the organization?</div>
                     <div class="example-query" onclick="useExample(this)">Show me a count of appurtenances by site.</div>
-                    <div class="example-query" onclick="useExample(this)">Which sites have the most equipment inventory records?</div>
-                    <div class="example-query" onclick="useExample(this)">Show me all guy wire and guy attachment records across the organization.</div>
+                    <!-- <div class="example-query" onclick="useExample(this)">Which sites have the most equipment inventory records?</div>
+                    <div class="example-query" onclick="useExample(this)">Show me all guy wire and guy attachment records across the organization.</div> -->
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        const FULL_SERVER_PATH = "{{ default_server_path }}";
+        const DEMO_SERVER_PATH = "{{ demo_server_path }}";
+
+        function setServerMode(mode) {
+            const fullBtn = document.getElementById('btnFullServer');
+            const demoBtn = document.getElementById('btnDemoServer');
+            const pathInput = document.getElementById('serverPath');
+            if (mode === 'demo') {
+                demoBtn.classList.add('active');
+                fullBtn.classList.remove('active');
+                pathInput.value = DEMO_SERVER_PATH;
+            } else {
+                fullBtn.classList.add('active');
+                demoBtn.classList.remove('active');
+                pathInput.value = FULL_SERVER_PATH;
+            }
+        }
+
         let connected = false;
 
         async function connectToServer() {
@@ -525,9 +559,7 @@
                     statusBadge.textContent = 'Connected ✓';
                     statusBadge.className = 'status-badge status-connected';
                     
-                    const toolsList = document.getElementById('toolsList');
-                    toolsList.innerHTML = '<strong>Available Tools (' + data.tools.length + '):</strong><br>' +
-                        data.tools.map(tool => `<span class="tool-tag">${tool}</span>`).join('');
+                    document.getElementById('toolsList').innerHTML = '';
                     
                     document.getElementById('sendBtn').disabled = false;
                     disconnectBtn.disabled = false;
